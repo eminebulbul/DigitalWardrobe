@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "Dijital Gardırop",
+    "slug": "dijital-gardirop",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {},
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Kiyafet fotograflarini secmek icin galeriye erisim gerekir.",
+          "cameraPermission": "Kiyafet fotograflari cekmek icin kameraya erisim gerekir."
+        }
+      ]
+    ]
+  }
+}
