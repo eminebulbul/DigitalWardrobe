@@ -1,5 +1,7 @@
 # Dijital Kiyafet Dolabi (React Native + Expo)
 
+1. Hafta videosu; https://youtu.be/BmEYuUqrrTc
+
 Bu proje, kiyafetleri dijital ortamda saklama ve gardiroptan kombin olusturma amaciyla hazirlanmis bir mobil uygulama iskeletidir.
 
 ## Ozellikler
