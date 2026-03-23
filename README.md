@@ -65,3 +65,5 @@ Ardindan Expo ekranindan iOS simulatoru veya fiziksel cihaz ile uygulamayi acabi
 
 - Varsayilan kullanici kimligi: `demo-user-1`
 - Bu yapi, ileride cloud entegrasyonu (Firebase/Supabase) icin genisletilebilir.
+
+1. Hafta videosu: 
