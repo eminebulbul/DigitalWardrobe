@@ -1,4 +1,4 @@
-# Dijital Gardirob (React Native + Expo)
+# Dijital Kiyafet Dolabi (React Native + Expo)
 
 Bu proje, kiyafetleri dijital ortamda saklama ve gardiroptan kombin olusturma amaciyla hazirlanmis bir mobil uygulama iskeletidir.
 
