@@ -46,7 +46,7 @@ export default function AppNavigator() {
       })}
     >
       <Tab.Screen name="Ana Sayfa" component={CreateOutfitScreen} />
-      <Tab.Screen name="Kiyafet Ekle" component={AddClothingScreen} />
+      <Tab.Screen name="Kıyafet Ekle" component={AddClothingScreen} />
       <Tab.Screen name="Koleksiyon" component={CollectionScreen} />
       <Tab.Screen
         name="Kategori Galerisi"

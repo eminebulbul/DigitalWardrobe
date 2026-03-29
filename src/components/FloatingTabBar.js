@@ -4,7 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 const ROUTE_META = {
 	"Ana Sayfa": { label: "Ana Sayfa", iconActive: "sparkles", iconIdle: "sparkles-outline" },
-	"Kiyafet Ekle": { label: "Ekle", iconActive: "add-circle", iconIdle: "add-circle-outline" },
+	"Kıyafet Ekle": { label: "Ekle", iconActive: "add-circle", iconIdle: "add-circle-outline" },
 	Koleksiyon: { label: "Koleksiyon", iconActive: "albums", iconIdle: "albums-outline" },
 };
 

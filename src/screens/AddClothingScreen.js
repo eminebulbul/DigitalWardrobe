@@ -13,18 +13,21 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import { CATEGORIES } from "../constants/categories";
 import { addClothing, CURRENT_USER_ID } from "../services/storage";
+import { removeBackgroundFromImage } from "../services/backgroundRemoval";
 
 export default function AddClothingScreen() {
   const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
+  const [isCategoryListOpen, setIsCategoryListOpen] = useState(false);
   const [imageUri, setImageUri] = useState(null);
-  const [tag, setTag] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
+  const [removingBackground, setRemovingBackground] = useState(false);
+  const [isBackgroundRemoved, setIsBackgroundRemoved] = useState(false);
 
   async function pickImageFromLibrary() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Izin gerekli", "Galeriye erisim izni verilmedi.");
+      Alert.alert("İzin gerekli", "Galeriye erişim izni verilmedi.");
       return;
     }
 
@@ -32,35 +35,54 @@ export default function AddClothingScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.8,
-      aspect: [3, 4],
     });
 
     if (!result.canceled && result.assets?.length) {
       setImageUri(result.assets[0].uri);
+      setIsBackgroundRemoved(false);
     }
   }
 
   async function takePhoto() {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Izin gerekli", "Kameraya erisim izni verilmedi.");
+      Alert.alert("İzin gerekli", "Kameraya erişim izni verilmedi.");
       return;
     }
 
     const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       quality: 0.8,
-      aspect: [3, 4],
     });
 
     if (!result.canceled && result.assets?.length) {
       setImageUri(result.assets[0].uri);
+      setIsBackgroundRemoved(false);
+    }
+  }
+
+  async function handleRemoveBackground() {
+    if (!imageUri) {
+      Alert.alert("Eksik bilgi", "Önce bir fotoğraf seçmelisin.");
+      return;
+    }
+
+    setRemovingBackground(true);
+    try {
+      const processedUri = await removeBackgroundFromImage(imageUri);
+      setImageUri(processedUri);
+      setIsBackgroundRemoved(true);
+      Alert.alert("Başarılı", "Arkaplan silindi. Önizlemeyi kontrol edip kaydedebilirsin.");
+    } catch (error) {
+      Alert.alert("Hata", "Arkaplan silinemedi: " + error.message);
+    } finally {
+      setRemovingBackground(false);
     }
   }
 
   async function saveClothing() {
     if (!imageUri) {
-      Alert.alert("Eksik bilgi", "Lutfen bir kiyafet fotografi sec.");
+      Alert.alert("Eksik bilgi", "Lütfen bir kıyafet fotoğrafı seç.");
       return;
     }
 
@@ -71,13 +93,15 @@ export default function AddClothingScreen() {
         userId: CURRENT_USER_ID,
         imageUri,
         category: selectedCategory,
-        tag: tag.trim(),
         description: description.trim(),
       });
       setImageUri(null);
-      setTag("");
       setDescription("");
-      Alert.alert("Basarili", "Kiyafet gardirobuna eklendi.");
+      setIsBackgroundRemoved(false);
+      Alert.alert("Başarılı", "Kıyafet gardıroba eklendi.");
+    } catch (error) {
+      console.error("Error saving clothing:", error);
+      Alert.alert("Hata", "Kıyafet kaydedilemedi: " + error.message);
     } finally {
       setSaving(false);
     }
@@ -86,16 +110,20 @@ export default function AddClothingScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Kiyafet Ekle</Text>
-        <Text style={styles.subtitleTop}>Fotograf sec, etiketle ve koleksiyona kaydet.</Text>
+        <View style={styles.heroCard}>
+          <Text style={styles.heroKicker}>GARDIROB GENIŞLET</Text>
+          <Text style={styles.heroTitle}>Yeni Kıyafet Ekle</Text>
+          <Text style={styles.heroDescription}>Fotoğraf seç, temizle ve koleksiyona kaydet</Text>
+        </View>
 
         <View style={styles.sectionCard}>
+          <Text style={styles.sectionHeading}>Fotoğraf</Text>
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.button} onPress={pickImageFromLibrary}>
-              <Text style={styles.buttonText}>Galeriden Sec</Text>
+              <Text style={styles.buttonText}>Galeriden Seç</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.button} onPress={takePhoto}>
-              <Text style={styles.buttonText}>Kamera ile Cek</Text>
+              <Text style={styles.buttonText}>Kamera ile Çek</Text>
             </TouchableOpacity>
           </View>
 
@@ -103,60 +131,99 @@ export default function AddClothingScreen() {
             {imageUri ? (
               <Image source={{ uri: imageUri }} style={styles.previewImage} />
             ) : (
-              <Text style={styles.previewText}>Once bir fotograf sec</Text>
+              <Text style={styles.previewText}>Önce bir fotoğraf seç</Text>
             )}
           </View>
+
+          <Text style={styles.processHint}>
+            {isBackgroundRemoved
+              ? "✓ Arkaplan temizlendi. Şimdi kaydedebilirsin."
+              : "Crop sonrası arkaplanı silerek daha temiz bir ürün görüntüsü alabilirsin."}
+          </Text>
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.subtitle}>Kategori</Text>
-          <View style={styles.categoriesRow}>
-            {CATEGORIES.map((category) => {
-              const active = category === selectedCategory;
-              return (
-                <TouchableOpacity
-                  key={category}
-                  style={[styles.categoryChip, active && styles.categoryChipActive]}
-                  onPress={() => setSelectedCategory(category)}
-                >
-                  <Text
-                    style={[styles.categoryText, active && styles.categoryTextActive]}
+          <Text style={styles.sectionHeading}>Kategori</Text>
+          <Text style={styles.sectionDescription}>Kıyafeti en uygun kategoriye al ve düzenli tut.</Text>
+
+          <TouchableOpacity
+            style={styles.categoryDropdownTrigger}
+            onPress={() => setIsCategoryListOpen((prev) => !prev)}
+          >
+            <Text style={styles.categoryDropdownText}>{selectedCategory}</Text>
+            <Text style={styles.categoryDropdownArrow}>{isCategoryListOpen ? "▲" : "▼"}</Text>
+          </TouchableOpacity>
+
+          {isCategoryListOpen && (
+            <View style={styles.categoryBlockGrid}>
+              {CATEGORIES.map((category) => {
+                const active = category === selectedCategory;
+                return (
+                  <TouchableOpacity
+                    key={category}
+                    style={[styles.categoryBlock, active && styles.categoryBlockActive]}
+                    onPress={() => {
+                      setSelectedCategory(category);
+                      setIsCategoryListOpen(false);
+                    }}
                   >
-                    {category}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                    <Text
+                      style={[styles.categoryBlockText, active && styles.categoryBlockTextActive]}
+                    >
+                      {category}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+        </View>
 
-          <Text style={styles.subtitle}>Etiket</Text>
-          <TextInput
-            style={styles.input}
-            value={tag}
-            onChangeText={setTag}
-            placeholder="Ornek: Spor, Ofis, Gunluk"
-            placeholderTextColor="#90887c"
-          />
-
-          <Text style={styles.subtitle}>Aciklama</Text>
+        <View style={styles.sectionCard}>
+          <Text style={styles.sectionHeading}>Açıklama</Text>
+          <Text style={styles.sectionDescription}>Kıyafetin notu, mevsim bilgisi veya kombin önerisi</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
             value={description}
             onChangeText={setDescription}
-            placeholder="Kiyafetin notu, mevsim bilgisi veya kombin onerisi"
+            placeholder="Notlarını yaz..."
             placeholderTextColor="#90887c"
             multiline
             textAlignVertical="top"
           />
         </View>
 
-        <TouchableOpacity
-          style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-          onPress={saveClothing}
-          disabled={saving}
-        >
-          <Text style={styles.saveText}>{saving ? "Kaydediliyor..." : "Kaydet"}</Text>
-        </TouchableOpacity>
+        <View style={styles.primaryActionsRow}>
+          <TouchableOpacity
+            style={[
+              styles.primaryActionButton,
+              styles.removeActionButton,
+              (!imageUri || removingBackground || saving) && styles.saveButtonDisabled,
+            ]}
+            onPress={handleRemoveBackground}
+            disabled={!imageUri || removingBackground || saving}
+          >
+            <Text style={styles.primaryActionText}>
+              {removingBackground
+                ? "Siliniyor..."
+                : isBackgroundRemoved
+                  ? "✓ Silindi"
+                  : "Arkaplanı Sil"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.primaryActionButton,
+              styles.saveActionButton,
+              saving && styles.saveButtonDisabled,
+            ]}
+            onPress={saveClothing}
+            disabled={saving}
+          >
+            <Text style={styles.primaryActionText}>{saving ? "Kaydediliyor..." : "Kaydet"}</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -165,29 +232,60 @@ export default function AddClothingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f4f2ed",
+    backgroundColor: "#f1ede5",
   },
   content: {
     padding: 16,
     paddingBottom: 110,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#27221e",
+  heroCard: {
+    borderRadius: 18,
+    backgroundColor: "#a855a8",
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    marginBottom: 14,
+    shadowColor: "#a855a8",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  subtitleTop: {
-    marginTop: 4,
-    marginBottom: 12,
-    color: "#6f685f",
+  heroKicker: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#f3e5f5",
+    letterSpacing: 1.2,
+    marginBottom: 4,
+  },
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: "800",
+    color: "#fff",
+    marginBottom: 6,
+  },
+  heroDescription: {
+    fontSize: 13,
+    color: "#f3e5f5",
+    fontWeight: "500",
   },
   sectionCard: {
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e7dfd3",
+    borderColor: "#e8dfd3",
     backgroundColor: "#fff",
     padding: 14,
     marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  sectionHeading: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#3f3a34",
+    marginBottom: 6,
   },
   actionRow: {
     flexDirection: "row",
@@ -198,12 +296,18 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: "#2d6a5a",
+    backgroundColor: "#a855a8",
     alignItems: "center",
+    shadowColor: "#a855a8",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonText: {
     color: "#fff",
     fontWeight: "700",
+    fontSize: 14,
   },
   previewBox: {
     borderRadius: 14,
@@ -230,29 +334,62 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 8,
   },
-  categoriesRow: {
+  sectionDescription: {
+    color: "#7d756b",
+    marginBottom: 10,
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  categoryDropdownTrigger: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#ddd3c3",
+    backgroundColor: "#fcfaf6",
+    paddingHorizontal: 10,
+    paddingVertical: 12,
+    marginBottom: 10,
+  },
+  categoryDropdownText: {
+    color: "#3d3731",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  categoryDropdownArrow: {
+    color: "#a855a8",
+    fontWeight: "800",
+    fontSize: 12,
+  },
+  categoryBlockGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+    marginBottom: 10,
   },
-  categoryChip: {
-    borderRadius: 20,
+  categoryBlock: {
+    minWidth: "30%",
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: "#d8cebf",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: "#fff",
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    backgroundColor: "#fbf8f2",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  categoryChipActive: {
-    borderColor: "#2f6f5e",
-    backgroundColor: "#e8f1ee",
+  categoryBlockActive: {
+    borderColor: "#a855a8",
+    backgroundColor: "#f3e5f5",
   },
-  categoryText: {
-    fontWeight: "600",
-    color: "#635c53",
+  categoryBlockText: {
+    fontWeight: "700",
+    color: "#5f584f",
+    fontSize: 12,
   },
-  categoryTextActive: {
-    color: "#2f6f5e",
+  categoryBlockTextActive: {
+    color: "#a855a8",
   },
   input: {
     marginTop: 2,
@@ -268,17 +405,42 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 100,
   },
-  saveButton: {
+  processHint: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#e8d5f2",
+    backgroundColor: "#f9f5fc",
+    color: "#6d4a8a",
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  primaryActionsRow: {
     marginTop: 4,
-    backgroundColor: "#1f4b40",
+    flexDirection: "row",
+    gap: 10,
+  },
+  primaryActionButton: {
+    flex: 1,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: "center",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  removeActionButton: {
+    backgroundColor: "#a855a8",
+  },
+  saveActionButton: {
+    backgroundColor: "#8b3a82",
   },
   saveButtonDisabled: {
     opacity: 0.6,
   },
-  saveText: {
+  primaryActionText: {
     color: "#fff",
     fontWeight: "800",
     fontSize: 15,

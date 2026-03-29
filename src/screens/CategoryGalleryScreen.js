@@ -1,14 +1,16 @@
 import React, { useCallback, useState } from "react";
 import {
+  Alert,
   FlatList,
   Image,
   SafeAreaView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { getClothes } from "../services/storage";
+import { getClothes, removeClothing } from "../services/storage";
 
 export default function CategoryGalleryScreen({ route }) {
   const { categoryName } = route.params || {};
@@ -25,14 +27,32 @@ export default function CategoryGalleryScreen({ route }) {
     }, [loadItems])
   );
 
+  function handleDelete(item) {
+    Alert.alert(
+      "Kıyafeti Sil",
+      "Bu kıyafet koleksiyondan kaldırılacak. Emin misin?",
+      [
+        { text: "Vazgeç", style: "cancel" },
+        {
+          text: "Sil",
+          style: "destructive",
+          onPress: async () => {
+            await removeClothing(item.id);
+            await loadItems();
+          },
+        },
+      ]
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>{categoryName || "Kategori"}</Text>
-      <Text style={styles.subtitle}>Bu kategoriye ait tum kiyafetler</Text>
+      <Text style={styles.subtitle}>Bu kategoriye ait tüm kıyafetler</Text>
 
       {!items.length ? (
         <View style={styles.emptyBox}>
-          <Text style={styles.emptyText}>Bu kategoride henuz kiyafet yok.</Text>
+          <Text style={styles.emptyText}>Bu kategoride henüz kıyafet yok.</Text>
         </View>
       ) : (
         <FlatList
@@ -45,12 +65,17 @@ export default function CategoryGalleryScreen({ route }) {
             <View style={styles.card}>
               <Image source={{ uri: item.imageUri }} style={styles.image} />
               <Text style={styles.category}>{item.category}</Text>
-              {!!item.tag && <Text style={styles.tag}>{item.tag}</Text>}
               {!!item.description && (
                 <Text numberOfLines={2} style={styles.description}>
                   {item.description}
                 </Text>
               )}
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDelete(item)}
+              >
+                <Text style={styles.deleteButtonText}>Sil</Text>
+              </TouchableOpacity>
             </View>
           )}
         />
@@ -103,18 +128,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingTop: 8,
   },
-  tag: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#2f6f5e",
-    paddingHorizontal: 8,
-    paddingTop: 4,
-  },
   description: {
     fontSize: 11,
     color: "#7a7166",
     paddingHorizontal: 8,
     paddingVertical: 8,
+  },
+  deleteButton: {
+    marginHorizontal: 8,
+    marginBottom: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#efd5d5",
+    backgroundColor: "#fff5f5",
+    alignItems: "center",
+    paddingVertical: 6,
+  },
+  deleteButtonText: {
+    color: "#b34747",
+    fontWeight: "800",
+    fontSize: 12,
   },
   emptyBox: {
     flex: 1,
