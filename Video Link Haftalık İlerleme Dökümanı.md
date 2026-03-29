@@ -5,7 +5,8 @@
 - **Ders:** Mobil Programlama / React Native Projesi
 - **Proje Adı:** Dijital Gardırop
 - **GIT Repo Linki:** https://github.com/eminebulbul/DigitalWardrobe
-- **Video Linki:**  https://youtu.be/BmEYuUqrrTc
+- **1. Video Linki:**  https://youtu.be/BmEYuUqrrTc
+- **2. Video Linki:**  https://youtu.be/Tqgt2mkIw6g
 ---
 
 ## 1. Hafta İlerleme Raporu
@@ -38,3 +39,32 @@
 1. Eklenen kıyafetleri ve kombinleri silme/düzenleme özellikleri.
 2. Arayüzde (UI/UX) kullanıcı deneyimini artıracak iyileştirmeler.
 3. Gerekirse bulut senkronizasyonu için altyapı araştırması yapılması.
+
+---
+
+## 2. Hafta Kıyafet Modülü Güncel Geliştirmeler
+
+Bu hafta kıyafet ekleme ve yönetme tarafında uygulamayı doğrudan etkileyen önemli geliştirmeler yapıldı.
+
+### Tamamlanan Özellikler
+- Kıyafet ekleme ekranı modern bir tasarıma taşındı (hero kart, daha düzenli alanlar, geliştirilmiş butonlar).
+- Kategori seçimi, daha kullanışlı olması için açılır/kapanır liste (dropdown) yapısına dönüştürüldü.
+- Etiket alanı kaldırılarak veri modeli sadeleştirildi; kıyafet notları açıklama alanında toplanmaya başladı.
+- Kıyafet silme özelliği eklendi ve kategori galerisi ekranından tek tek silme işlemi aktif hale getirildi.
+- Kıyafet silindiğinde bu kıyafeti kullanan kayıtlı kombinlerin otomatik olarak güncellenmesi sağlandı.
+- Arkaplan silme özelliği eklendi: seçilen fotoğraf backend üzerinden remove.bg servisine gönderilip temizlenmiş görsel olarak geri alınıyor.
+- Arkaplan silme akışı için mobil servis katmanı yazıldı ve cache dosyasına kaydedilen sonuç görseli uygulama içinde tekrar kullanılır hale getirildi.
+
+### Teknik Olarak Yapılanlar
+- `AddClothingScreen.js` içinde kamera/galeri akışı, açıklama alanı, kategori dropdown yapısı ve arkaplan silme butonu birleştirildi.
+- `backgroundRemoval.js` servisi ile mobil istemci-backend iletişimi kuruldu.
+- `backend/server.js` üzerinde `/api/remove-background` endpoint'i ile remove.bg entegrasyonu yapıldı.
+- `storage.js` içinde kıyafet silme sonrası kombin temizliği sağlayan fonksiyon eklendi.
+
+### Arayüz ve Kullanıcı Deneyimi İyileştirmeleri
+- Kıyafet ekranlarında renk dili ve tasarım bütünlüğü güncellendi.
+- Metinler Türkçe karakter desteğiyle düzeltildi (kıyafet, kombin, açıklama vb.).
+- Koleksiyon ekranı sekmeli yapıya geçirildiği için kullanıcılar kıyafetlerini ve kombinlerini daha düzenli görüntüleyebiliyor.
+
+### Sonuç
+Kıyafet modülü; ekleme, listeleme, silme, açıklama ile yönetim ve arkaplan temizleme özellikleriyle daha üretime yakın ve kullanıcı dostu bir yapıya ulaştı.
