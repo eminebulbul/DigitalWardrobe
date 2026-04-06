@@ -7,6 +7,7 @@
 - **GIT Repo Linki:** https://github.com/eminebulbul/DigitalWardrobe
 - **1. Video Linki:**  https://youtu.be/BmEYuUqrrTc
 - **2. Video Linki:**  https://youtu.be/Tqgt2mkIw6g
+- **3. Video Linki:**  https://youtu.be/eG7ZVWCF51M
 ---
 
 ## 1. Hafta İlerleme Raporu
@@ -68,3 +69,20 @@ Bu hafta kıyafet ekleme ve yönetme tarafında uygulamayı doğrudan etkileyen 
 
 ### Sonuç
 Kıyafet modülü; ekleme, listeleme, silme, açıklama ile yönetim ve arkaplan temizleme özellikleriyle daha üretime yakın ve kullanıcı dostu bir yapıya ulaştı.
+
+---
+
+## 3. Hafta Shuffle Geliştirmeleri
+
+Bu hafta kombin oluşturma (shuffle) mekanizması daha gerçekçi kombin kurallarıyla güncellendi.
+
+### Kısaca Yapılanlar
+- Shuffle algoritması kategori bazlı slot mantığına geçirildi: üst, alt, tek parça, ayakkabı, aksesuar ve dış giyim ayrımı yapıldı.
+- Tek parça (elbise/tulum vb.) ürünler için üst+alt yerine kullanılabilen ayrı bir kural eklendi.
+- Yetersiz veri durumunda (ne üst+alt ne de tek parça yoksa) boş sonuç dönülerek kullanıcıya uyarı gösterilmesi sağlandı.
+- Dış giyim için olasılıksal ekleme (%50) ile kombin sonuçları daha doğal hale getirildi.
+- Oluşturulan kombinlerin isim verilerek kaydedilmesi ve kayıtlı ekranlarda isimle listelenmesi tamamlandı.
+
+### Teknik Not
+- Shuffle kural motoru `src/utils/shuffle.js` içinde güncellendi.
+- Shuffle çağrısı ve isimli kayıt akışı `src/screens/CreateOutfitScreen.js` içinde yönetiliyor.
