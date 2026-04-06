@@ -62,3 +62,12 @@ export async function addOutfit(outfit) {
   all.push(outfit);
   await AsyncStorage.setItem(OUTFITS_KEY, JSON.stringify(all));
 }
+
+export async function removeOutfit(outfitId, userId = CURRENT_USER_ID) {
+  const raw = await AsyncStorage.getItem(OUTFITS_KEY);
+  const all = safeParse(raw);
+  const nextOutfits = all.filter(
+    (item) => !(item.userId === userId && item.id === outfitId)
+  );
+  await AsyncStorage.setItem(OUTFITS_KEY, JSON.stringify(nextOutfits));
+}

@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -16,6 +17,7 @@ import { addOutfit, CURRENT_USER_ID, getClothes } from "../services/storage";
 export default function CreateOutfitScreen() {
   const [clothes, setClothes] = useState([]);
   const [randomOutfit, setRandomOutfit] = useState([]);
+  const [outfitName, setOutfitName] = useState("");
 
   const canShuffle = clothes.length > 0;
 
@@ -52,13 +54,21 @@ export default function CreateOutfitScreen() {
       return;
     }
 
+    const trimmedName = outfitName.trim();
+    if (!trimmedName) {
+      Alert.alert("İsim gerekli", "Kombini kaydetmeden önce bir isim yaz.");
+      return;
+    }
+
     await addOutfit({
       id: Date.now().toString(),
       userId: CURRENT_USER_ID,
+      name: trimmedName,
       clothesIds: randomOutfit.map((item) => item.id),
       createdAt: new Date().toISOString(),
     });
 
+    setOutfitName("");
     Alert.alert("Kaydedildi", "Kombin Koleksiyon ekranına eklendi.");
   }
 
@@ -95,6 +105,18 @@ export default function CreateOutfitScreen() {
             ))}
           </View>
         )}
+
+        <View style={styles.nameInputWrap}>
+          <Text style={styles.nameLabel}>Kombin İsmi</Text>
+          <TextInput
+            value={outfitName}
+            onChangeText={setOutfitName}
+            placeholder="Örn: Bahar Kampüs Kombini"
+            placeholderTextColor="#9a9186"
+            style={styles.nameInput}
+            maxLength={50}
+          />
+        </View>
 
         <TouchableOpacity
           style={[styles.saveButton, !randomOutfit.length && styles.disabledButton]}
@@ -223,6 +245,25 @@ const styles = StyleSheet.create({
     color: "#514a41",
     fontSize: 13,
     backgroundColor: "#f9f7f2",
+  },
+  nameInputWrap: {
+    marginBottom: 10,
+  },
+  nameLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#514a41",
+    marginBottom: 6,
+  },
+  nameInput: {
+    borderWidth: 1,
+    borderColor: "#e8dfd3",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 11,
+    color: "#3f3a34",
+    fontSize: 14,
   },
   saveButton: {
     backgroundColor: "#a855a8",

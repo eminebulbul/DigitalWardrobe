@@ -1,6 +1,34 @@
 import * as FileSystem from "expo-file-system/legacy";
+import Constants from "expo-constants";
+import { NativeModules } from "react-native";
 
-const BACKEND_BASE_URL = "http://172.16.1.140:3001";
+function resolveBackendBaseUrl() {
+  const envUrl = process.env.EXPO_PUBLIC_BG_API_URL;
+  if (envUrl) {
+    return envUrl;
+  }
+
+  const hostUri =
+    Constants.expoConfig?.hostUri ||
+    Constants.manifest2?.extra?.expoClient?.hostUri;
+
+  if (hostUri) {
+    const host = hostUri.split(":")[0];
+    return `http://${host}:3001`;
+  }
+
+  const scriptURL = NativeModules.SourceCode?.scriptURL;
+  if (scriptURL) {
+    const match = scriptURL.match(/https?:\/\/([^/:]+)/);
+    if (match?.[1]) {
+      return `http://${match[1]}:3001`;
+    }
+  }
+
+  return "http://localhost:3001";
+}
+
+const BACKEND_BASE_URL = resolveBackendBaseUrl();
 
 export async function removeBackgroundFromImage(imageUri) {
   const formData = new FormData();

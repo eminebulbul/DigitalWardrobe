@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import {
+  Alert,
   Image,
   SafeAreaView,
   ScrollView,
@@ -10,7 +11,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { CATEGORIES } from "../constants/categories";
-import { getClothes, getOutfits } from "../services/storage";
+import { getClothes, getOutfits, removeOutfit } from "../services/storage";
 
 export default function CollectionScreen({ navigation }) {
   const [clothes, setClothes] = useState([]);
@@ -50,6 +51,20 @@ export default function CollectionScreen({ navigation }) {
       loadData();
     }, [loadData])
   );
+
+  function handleDeleteOutfit(outfitId) {
+    Alert.alert("Kombini Sil", "Bu kombin koleksiyondan kaldırılacak. Emin misin?", [
+      { text: "Vazgeç", style: "cancel" },
+      {
+        text: "Sil",
+        style: "destructive",
+        onPress: async () => {
+          await removeOutfit(outfitId);
+          await loadData();
+        },
+      },
+    ]);
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -162,10 +177,11 @@ export default function CollectionScreen({ navigation }) {
                 const pieces = outfit.clothesIds
                   .map((id) => clothesMap[id])
                   .filter(Boolean);
+                const title = outfit.name?.trim() || `Kayıtlı Kombin #${outfits.length - index}`;
 
                 return (
                   <View key={outfit.id} style={styles.outfitCard}>
-                    <Text style={styles.outfitTitle}>Kayıtlı Kombin #{outfits.length - index}</Text>
+                    <Text style={styles.outfitTitle}>{title}</Text>
                     <View style={styles.piecesRow}>
                       {pieces.map((piece) => (
                         <View key={piece.id} style={styles.pieceCard}>
@@ -177,6 +193,12 @@ export default function CollectionScreen({ navigation }) {
                         </View>
                       ))}
                     </View>
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => handleDeleteOutfit(outfit.id)}
+                    >
+                      <Text style={styles.deleteButtonText}>Kombini Sil</Text>
+                    </TouchableOpacity>
                   </View>
                 );
               })
@@ -421,5 +443,19 @@ const styles = StyleSheet.create({
     color: "#5f574d",
     paddingHorizontal: 6,
     paddingBottom: 6,
+  },
+  deleteButton: {
+    marginTop: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#efd5d5",
+    backgroundColor: "#fff5f5",
+    alignItems: "center",
+    paddingVertical: 8,
+  },
+  deleteButtonText: {
+    color: "#b34747",
+    fontWeight: "800",
+    fontSize: 12,
   },
 });

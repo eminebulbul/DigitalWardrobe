@@ -129,7 +129,27 @@ export default function AddClothingScreen() {
 
           <View style={styles.previewBox}>
             {imageUri ? (
-              <Image source={{ uri: imageUri }} style={styles.previewImage} />
+              <>
+                <Image source={{ uri: imageUri }} style={styles.previewImage} />
+                <View style={styles.previewOverlay} pointerEvents="box-none">
+                  <TouchableOpacity
+                    style={[
+                      styles.previewActionButton,
+                      (removingBackground || saving) && styles.saveButtonDisabled,
+                    ]}
+                    onPress={handleRemoveBackground}
+                    disabled={removingBackground || saving}
+                  >
+                    <Text style={styles.previewActionText}>
+                      {removingBackground
+                        ? "Siliniyor..."
+                        : isBackgroundRemoved
+                          ? "✓ Silindi"
+                          : "Arkaplanı Sil"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
             ) : (
               <Text style={styles.previewText}>Önce bir fotoğraf seç</Text>
             )}
@@ -194,24 +214,6 @@ export default function AddClothingScreen() {
         </View>
 
         <View style={styles.primaryActionsRow}>
-          <TouchableOpacity
-            style={[
-              styles.primaryActionButton,
-              styles.removeActionButton,
-              (!imageUri || removingBackground || saving) && styles.saveButtonDisabled,
-            ]}
-            onPress={handleRemoveBackground}
-            disabled={!imageUri || removingBackground || saving}
-          >
-            <Text style={styles.primaryActionText}>
-              {removingBackground
-                ? "Siliniyor..."
-                : isBackgroundRemoved
-                  ? "✓ Silindi"
-                  : "Arkaplanı Sil"}
-            </Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={[
               styles.primaryActionButton,
@@ -310,6 +312,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   previewBox: {
+    position: "relative",
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "#e7dfd3",
@@ -323,6 +326,29 @@ const styles = StyleSheet.create({
   previewImage: {
     width: "100%",
     height: 320,
+  },
+  previewOverlay: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    bottom: 12,
+    alignItems: "flex-end",
+  },
+  previewActionButton: {
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "rgba(168, 85, 168, 0.92)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.14,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  previewActionText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 13,
   },
   previewText: {
     color: "#8a8176",
@@ -430,9 +456,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 4,
     elevation: 3,
-  },
-  removeActionButton: {
-    backgroundColor: "#a855a8",
   },
   saveActionButton: {
     backgroundColor: "#8b3a82",
