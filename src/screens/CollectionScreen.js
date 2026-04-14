@@ -11,13 +11,25 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { CATEGORIES } from "../constants/categories";
-import { getClothes, getOutfits, removeOutfit } from "../services/storage";
+import {
+  addOutfit,
+  getClothes,
+  getOutfits,
+  removeOutfit,
+} from "../services/storage";
 
 export default function CollectionScreen({ navigation }) {
   const [clothes, setClothes] = useState([]);
   const [outfits, setOutfits] = useState([]);
   const [activeView, setActiveView] = useState("outfits");
   const [selectedCategory, setSelectedCategory] = useState("Tümü");
+
+  function formatOutfitDate(isoDate) {
+    if (!isoDate) return null;
+    const date = new Date(isoDate);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleDateString("tr-TR");
+  }
 
   const clothesMap = useMemo(
     () =>
@@ -28,13 +40,33 @@ export default function CollectionScreen({ navigation }) {
     [clothes]
   );
 
-  const categoryOptions = useMemo(() => ["Tümü", ...CATEGORIES], []);
+  const categoryOptions = useMemo(
+    () =>
+      ["Tümü", ...CATEGORIES].sort((a, b) =>
+        a.localeCompare(b, "tr-TR", { sensitivity: "base" })
+      ),
+    []
+  );
 
   const filteredClothes = useMemo(() => {
-    if (selectedCategory === "Tümü") {
-      return clothes;
-    }
-    return clothes.filter((item) => item.category === selectedCategory);
+    const base =
+      selectedCategory === "Tümü"
+        ? clothes
+        : clothes.filter((item) => item.category === selectedCategory);
+
+    return base.slice().sort((a, b) => {
+      const categoryCompare = (a.category || "").localeCompare(b.category || "", "tr-TR", {
+        sensitivity: "base",
+      });
+
+      if (categoryCompare !== 0) {
+        return categoryCompare;
+      }
+
+      return (a.description || "").localeCompare(b.description || "", "tr-TR", {
+        sensitivity: "base",
+      });
+    });
   }, [clothes, selectedCategory]);
 
   const loadData = useCallback(async () => {
@@ -52,15 +84,26 @@ export default function CollectionScreen({ navigation }) {
     }, [loadData])
   );
 
-  function handleDeleteOutfit(outfitId) {
+  function handleDeleteOutfit(outfit) {
     Alert.alert("Kombini Sil", "Bu kombin koleksiyondan kaldırılacak. Emin misin?", [
       { text: "Vazgeç", style: "cancel" },
       {
         text: "Sil",
         style: "destructive",
         onPress: async () => {
-          await removeOutfit(outfitId);
+          await removeOutfit(outfit.id);
           await loadData();
+
+          Alert.alert("Kombin silindi", "İstersen geri alabilirsin.", [
+            { text: "Kapat", style: "cancel" },
+            {
+              text: "Geri Al",
+              onPress: async () => {
+                await addOutfit(outfit);
+                await loadData();
+              },
+            },
+          ]);
         },
       },
     ]);
@@ -178,10 +221,13 @@ export default function CollectionScreen({ navigation }) {
                   .map((id) => clothesMap[id])
                   .filter(Boolean);
                 const title = outfit.name?.trim() || `Kayıtlı Kombin #${outfits.length - index}`;
+                const dateText = formatOutfitDate(outfit.createdAt);
+                const metaText = `${pieces.length} parça${dateText ? ` • ${dateText}` : ""}`;
 
                 return (
                   <View key={outfit.id} style={styles.outfitCard}>
                     <Text style={styles.outfitTitle}>{title}</Text>
+                    <Text style={styles.outfitMeta}>{metaText}</Text>
                     <View style={styles.piecesRow}>
                       {pieces.map((piece) => (
                         <View key={piece.id} style={styles.pieceCard}>
@@ -195,7 +241,7 @@ export default function CollectionScreen({ navigation }) {
                     </View>
                     <TouchableOpacity
                       style={styles.deleteButton}
-                      onPress={() => handleDeleteOutfit(outfit.id)}
+                      onPress={() => handleDeleteOutfit(outfit)}
                     >
                       <Text style={styles.deleteButtonText}>Kombini Sil</Text>
                     </TouchableOpacity>
@@ -409,8 +455,14 @@ const styles = StyleSheet.create({
   outfitTitle: {
     fontWeight: "800",
     color: "#413b34",
-    marginBottom: 10,
+    marginBottom: 4,
     fontSize: 14,
+  },
+  outfitMeta: {
+    color: "#7a7267",
+    fontSize: 11,
+    fontWeight: "600",
+    marginBottom: 10,
   },
   piecesRow: {
     flexDirection: "row",

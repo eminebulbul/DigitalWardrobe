@@ -12,24 +12,35 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { buildRandomOutfit } from "../utils/shuffle";
-import { addOutfit, CURRENT_USER_ID, getClothes } from "../services/storage";
+import {
+  addOutfit,
+  CURRENT_USER_ID,
+  getClothes,
+  getOutfits,
+} from "../services/storage";
 
-export default function CreateOutfitScreen() {
+export default function CreateOutfitScreen({ navigation }) {
   const [clothes, setClothes] = useState([]);
+  const [recentOutfits, setRecentOutfits] = useState([]);
   const [randomOutfit, setRandomOutfit] = useState([]);
   const [outfitName, setOutfitName] = useState("");
+  const [savingOutfit, setSavingOutfit] = useState(false);
 
   const canShuffle = clothes.length > 0;
 
-  const loadClothes = useCallback(async () => {
-    const data = await getClothes();
-    setClothes(data);
+  const loadData = useCallback(async () => {
+    const [savedClothes, savedOutfits] = await Promise.all([
+      getClothes(),
+      getOutfits(),
+    ]);
+    setClothes(savedClothes);
+    setRecentOutfits(savedOutfits.slice().reverse());
   }, []);
 
   useFocusEffect(
     useCallback(() => {
-      loadClothes();
-    }, [loadClothes])
+      loadData();
+    }, [loadData])
   );
 
   const summaryText = useMemo(() => {
@@ -40,7 +51,10 @@ export default function CreateOutfitScreen() {
   }, [randomOutfit]);
 
   function shuffleOutfit() {
-    const result = buildRandomOutfit(clothes);
+    const result = buildRandomOutfit(clothes, {
+      recentOutfits,
+      attempts: 12,
+    });
     if (!result.length) {
       Alert.alert("Yetersiz veri", "Kombin için önce kıyafet eklemelisin.");
       return;
@@ -49,6 +63,10 @@ export default function CreateOutfitScreen() {
   }
 
   async function saveCurrentOutfit() {
+    if (savingOutfit) {
+      return;
+    }
+
     if (!randomOutfit.length) {
       Alert.alert("Kombin yok", "Kaydetmeden önce kombin oluştur.");
       return;
@@ -60,16 +78,34 @@ export default function CreateOutfitScreen() {
       return;
     }
 
-    await addOutfit({
-      id: Date.now().toString(),
-      userId: CURRENT_USER_ID,
-      name: trimmedName,
-      clothesIds: randomOutfit.map((item) => item.id),
-      createdAt: new Date().toISOString(),
-    });
+    setSavingOutfit(true);
+    try {
+      const newOutfit = {
+        id: Date.now().toString(),
+        userId: CURRENT_USER_ID,
+        name: trimmedName,
+        clothesIds: randomOutfit.map((item) => item.id),
+        createdAt: new Date().toISOString(),
+      };
 
-    setOutfitName("");
-    Alert.alert("Kaydedildi", "Kombin Koleksiyon ekranına eklendi.");
+      await addOutfit(newOutfit);
+
+      setOutfitName("");
+      setRandomOutfit([]);
+      setRecentOutfits((prev) => [newOutfit, ...prev].slice(0, 10));
+
+      Alert.alert("Kaydedildi", "Kombin Koleksiyon ekranına eklendi.", [
+        { text: "Tamam", style: "cancel" },
+        {
+          text: "Kombinlerime Git",
+          onPress: () => navigation.navigate("Koleksiyon"),
+        },
+      ]);
+    } catch (error) {
+      Alert.alert("Hata", "Kombin kaydedilemedi: " + error.message);
+    } finally {
+      setSavingOutfit(false);
+    }
   }
 
   return (
@@ -93,7 +129,19 @@ export default function CreateOutfitScreen() {
         {!randomOutfit.length ? (
           <View style={styles.emptyBox}>
             <Text style={styles.emptyTitle}>Kombin henüz hazır değil</Text>
-            <Text style={styles.emptyText}>Yukarıdaki butonla rastgele kombin oluştur.</Text>
+            <Text style={styles.emptyText}>
+              {canShuffle
+                ? "Yukarıdaki butonla rastgele kombin oluştur."
+                : "Önce gardırobuna kıyafet ekleyip sonra kombin üret."}
+            </Text>
+            {!canShuffle && (
+              <TouchableOpacity
+                style={styles.emptyActionButton}
+                onPress={() => navigation.navigate("Kıyafet Ekle")}
+              >
+                <Text style={styles.emptyActionText}>Kıyafet Ekleye Git</Text>
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           <View style={styles.grid}>
@@ -119,11 +167,14 @@ export default function CreateOutfitScreen() {
         </View>
 
         <TouchableOpacity
-          style={[styles.saveButton, !randomOutfit.length && styles.disabledButton]}
+          style={[
+            styles.saveButton,
+            (!randomOutfit.length || savingOutfit) && styles.disabledButton,
+          ]}
           onPress={saveCurrentOutfit}
-          disabled={!randomOutfit.length}
+          disabled={!randomOutfit.length || savingOutfit}
         >
-          <Text style={styles.saveText}>Kombini Kaydet</Text>
+          <Text style={styles.saveText}>{savingOutfit ? "Kaydediliyor..." : "Kombini Kaydet"}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -214,6 +265,19 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#7d756b",
     fontSize: 14,
+  },
+  emptyActionButton: {
+    marginTop: 12,
+    borderRadius: 10,
+    backgroundColor: "#a855a8",
+    alignItems: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  emptyActionText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 13,
   },
   grid: {
     flexDirection: "row",

@@ -10,13 +10,18 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import { CATEGORIES } from "../constants/categories";
 import { addClothing, CURRENT_USER_ID } from "../services/storage";
 import { removeBackgroundFromImage } from "../services/backgroundRemoval";
 
+const SORTED_CATEGORIES = CATEGORIES.slice().sort((a, b) =>
+  a.localeCompare(b, "tr-TR", { sensitivity: "base" })
+);
+
 export default function AddClothingScreen() {
-  const [selectedCategory, setSelectedCategory] = useState(CATEGORIES[0]);
+  const [selectedCategory, setSelectedCategory] = useState(SORTED_CATEGORIES[0]);
   const [isCategoryListOpen, setIsCategoryListOpen] = useState(false);
   const [imageUri, setImageUri] = useState(null);
   const [description, setDescription] = useState("");
@@ -24,40 +29,68 @@ export default function AddClothingScreen() {
   const [removingBackground, setRemovingBackground] = useState(false);
   const [isBackgroundRemoved, setIsBackgroundRemoved] = useState(false);
 
-  async function pickImageFromLibrary() {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("İzin gerekli", "Galeriye erişim izni verilmedi.");
-      return;
+  async function fitImageToCanvas(uri) {
+    if (!uri) {
+      return null;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 0.8,
-    });
+    const manipulated = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: 1080 } }],
+      { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
+    );
 
-    if (!result.canceled && result.assets?.length) {
-      setImageUri(result.assets[0].uri);
-      setIsBackgroundRemoved(false);
+    return manipulated.uri;
+  }
+
+  async function pickImageFromLibrary() {
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("İzin gerekli", "Galeriye erişim izni verilmedi.");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        quality: 0.85,
+      });
+
+      if (!result.canceled && result.assets?.length) {
+        const fittedUri = await fitImageToCanvas(result.assets[0].uri);
+        setImageUri(fittedUri || result.assets[0].uri);
+        setIsBackgroundRemoved(false);
+      }
+    } catch (error) {
+      if (error?.message !== "User cancelled") {
+        Alert.alert("Hata", "Fotoğraf seçilemedi: " + error.message);
+      }
     }
   }
 
   async function takePhoto() {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("İzin gerekli", "Kameraya erişim izni verilmedi.");
-      return;
-    }
+    try {
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("İzin gerekli", "Kameraya erişim izni verilmedi.");
+        return;
+      }
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      quality: 0.8,
-    });
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        quality: 0.85,
+      });
 
-    if (!result.canceled && result.assets?.length) {
-      setImageUri(result.assets[0].uri);
-      setIsBackgroundRemoved(false);
+      if (!result.canceled && result.assets?.length) {
+        const fittedUri = await fitImageToCanvas(result.assets[0].uri);
+        setImageUri(fittedUri || result.assets[0].uri);
+        setIsBackgroundRemoved(false);
+      }
+    } catch (error) {
+      if (error?.message !== "User cancelled") {
+        Alert.alert("Hata", "Fotoğraf çekilemedi: " + error.message);
+      }
     }
   }
 
@@ -130,7 +163,7 @@ export default function AddClothingScreen() {
           <View style={styles.previewBox}>
             {imageUri ? (
               <>
-                <Image source={{ uri: imageUri }} style={styles.previewImage} />
+                <Image source={{ uri: imageUri }} style={styles.previewImage} resizeMode="contain" />
                 <View style={styles.previewOverlay} pointerEvents="box-none">
                   <TouchableOpacity
                     style={[
@@ -158,7 +191,7 @@ export default function AddClothingScreen() {
           <Text style={styles.processHint}>
             {isBackgroundRemoved
               ? "✓ Arkaplan temizlendi. Şimdi kaydedebilirsin."
-              : "Crop sonrası arkaplanı silerek daha temiz bir ürün görüntüsü alabilirsin."}
+              : "Fotoğrafı seçip crop ekranında düzenleyebilir, sonra arkaplanı silebilirsin."}
           </Text>
         </View>
 
@@ -176,7 +209,7 @@ export default function AddClothingScreen() {
 
           {isCategoryListOpen && (
             <View style={styles.categoryBlockGrid}>
-              {CATEGORIES.map((category) => {
+              {SORTED_CATEGORIES.map((category) => {
                 const active = category === selectedCategory;
                 return (
                   <TouchableOpacity
@@ -230,12 +263,7 @@ export default function AddClothingScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f1ede5",
-  },
   content: {
     padding: 16,
     paddingBottom: 110,

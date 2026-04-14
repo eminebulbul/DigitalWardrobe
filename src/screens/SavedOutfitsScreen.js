@@ -10,11 +10,18 @@ import {
   View,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { getClothes, getOutfits, removeOutfit } from "../services/storage";
+import { addOutfit, getClothes, getOutfits, removeOutfit } from "../services/storage";
 
 export default function SavedOutfitsScreen() {
   const [outfits, setOutfits] = useState([]);
   const [clothes, setClothes] = useState([]);
+
+  function formatOutfitDate(isoDate) {
+    if (!isoDate) return null;
+    const date = new Date(isoDate);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleDateString("tr-TR");
+  }
 
   const clothesMap = useMemo(
     () =>
@@ -30,7 +37,7 @@ export default function SavedOutfitsScreen() {
       getOutfits(),
       getClothes(),
     ]);
-    setOutfits(savedOutfits.reverse());
+    setOutfits(savedOutfits.slice().reverse());
     setClothes(savedClothes);
   }, []);
 
@@ -40,15 +47,26 @@ export default function SavedOutfitsScreen() {
     }, [loadData])
   );
 
-  function handleDeleteOutfit(outfitId) {
+  function handleDeleteOutfit(outfit) {
     Alert.alert("Kombini Sil", "Bu kombin kayıtlardan kaldırılacak. Emin misin?", [
       { text: "Vazgeç", style: "cancel" },
       {
         text: "Sil",
         style: "destructive",
         onPress: async () => {
-          await removeOutfit(outfitId);
+          await removeOutfit(outfit.id);
           await loadData();
+
+          Alert.alert("Kombin silindi", "İstersen geri alabilirsin.", [
+            { text: "Kapat", style: "cancel" },
+            {
+              text: "Geri Al",
+              onPress: async () => {
+                await addOutfit(outfit);
+                await loadData();
+              },
+            },
+          ]);
         },
       },
     ]);
@@ -74,10 +92,13 @@ export default function SavedOutfitsScreen() {
               .map((id) => clothesMap[id])
               .filter(Boolean);
             const title = outfit.name?.trim() || `Kombin #${outfits.length - index}`;
+            const dateText = formatOutfitDate(outfit.createdAt);
+            const metaText = `${pieces.length} parça${dateText ? ` • ${dateText}` : ""}`;
 
             return (
               <View key={outfit.id} style={styles.outfitCard}>
                 <Text style={styles.outfitTitle}>{title}</Text>
+                <Text style={styles.outfitMeta}>{metaText}</Text>
                 <View style={styles.piecesRow}>
                   {pieces.map((piece) => (
                     <View key={piece.id} style={styles.pieceCard}>
@@ -88,7 +109,7 @@ export default function SavedOutfitsScreen() {
                 </View>
                 <TouchableOpacity
                   style={styles.deleteButton}
-                  onPress={() => handleDeleteOutfit(outfit.id)}
+                  onPress={() => handleDeleteOutfit(outfit)}
                 >
                   <Text style={styles.deleteButtonText}>Kombini Sil</Text>
                 </TouchableOpacity>
@@ -187,8 +208,14 @@ const styles = StyleSheet.create({
   outfitTitle: {
     fontWeight: "800",
     color: "#413b34",
-    marginBottom: 10,
+    marginBottom: 4,
     fontSize: 14,
+  },
+  outfitMeta: {
+    color: "#7a7267",
+    fontSize: 11,
+    fontWeight: "600",
+    marginBottom: 10,
   },
   piecesRow: {
     flexDirection: "row",

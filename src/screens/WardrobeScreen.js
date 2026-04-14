@@ -5,6 +5,7 @@ import {
   SafeAreaView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -17,6 +18,7 @@ export default function WardrobeScreen() {
   const [clothes, setClothes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState("Tüm");
+  const [searchText, setSearchText] = useState("");
 
   const loadClothes = useCallback(async () => {
     setLoading(true);
@@ -34,11 +36,37 @@ export default function WardrobeScreen() {
     }, [loadClothes])
   );
 
-  const filters = ["Tüm", ...CATEGORIES];
-  const filtered =
-    activeCategory === "Tüm"
-      ? clothes
-      : clothes.filter((item) => item.category === activeCategory);
+  const filters = ["Tüm", ...CATEGORIES].sort((a, b) =>
+    a.localeCompare(b, "tr-TR", { sensitivity: "base" })
+  );
+
+  const filtered = clothes
+    .filter((item) =>
+      activeCategory === "Tüm" ? true : item.category === activeCategory
+    )
+    .filter((item) => {
+      const query = searchText.trim().toLocaleLowerCase("tr-TR");
+      if (!query) {
+        return true;
+      }
+
+      const categoryText = (item.category || "").toLocaleLowerCase("tr-TR");
+      const descriptionText = (item.description || "").toLocaleLowerCase("tr-TR");
+      return categoryText.includes(query) || descriptionText.includes(query);
+    })
+    .sort((a, b) => {
+      const categoryCompare = (a.category || "").localeCompare(b.category || "", "tr-TR", {
+        sensitivity: "base",
+      });
+
+      if (categoryCompare !== 0) {
+        return categoryCompare;
+      }
+
+      return (a.description || "").localeCompare(b.description || "", "tr-TR", {
+        sensitivity: "base",
+      });
+    });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -59,6 +87,13 @@ export default function WardrobeScreen() {
 
       <View style={styles.panelCard}>
         <Text style={styles.filterTitle}>Kategoriye Göre Ara</Text>
+        <TextInput
+          style={styles.searchInput}
+          value={searchText}
+          onChangeText={setSearchText}
+          placeholder="Kıyafetlerde ara..."
+          placeholderTextColor="#9a9186"
+        />
         <View style={styles.filterRow}>
           {filters.map((category) => {
             const active = category === activeCategory;
@@ -172,6 +207,17 @@ const styles = StyleSheet.create({
     color: "#6e685f",
     marginBottom: 8,
     letterSpacing: 0.5,
+  },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: "#ddd4c9",
+    borderRadius: 10,
+    backgroundColor: "#fcfaf6",
+    paddingHorizontal: 10,
+    paddingVertical: 9,
+    color: "#3d3731",
+    fontSize: 13,
+    marginBottom: 10,
   },
   filterRow: {
     flexDirection: "row",
