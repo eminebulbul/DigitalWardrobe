@@ -8,6 +8,7 @@
 - **1. Video Linki:**  https://youtu.be/BmEYuUqrrTc
 - **2. Video Linki:**  https://youtu.be/Tqgt2mkIw6g
 - **3. Video Linki:**  https://youtu.be/eG7ZVWCF51M
+- **4. Video Linki:**  https://youtu.be/kr-2wAUSk0k
 ---
 
 ## 1. Hafta İlerleme Raporu
@@ -86,3 +87,12 @@ Bu hafta kombin oluşturma (shuffle) mekanizması daha gerçekçi kombin kuralla
 ### Teknik Not
 - Shuffle kural motoru `src/utils/shuffle.js` içinde güncellendi.
 - Shuffle çağrısı ve isimli kayıt akışı `src/screens/CreateOutfitScreen.js` içinde yönetiliyor.
+
+## 4. hafta
+Bugün kısaca şunları tamamladık:
+
+Kombin tarafını güçlendirdik: shuffle mantığını iyileştirdik, kombinleri isimle kaydetme akışını netleştirdik.
+Kombin ekranlarını toparladık: Kombinlerim/Koleksiyon tarafında listeleme, silme ve geri alma deneyimini düzenledik.
+Kıyafet ekleme akışını stabilize ettik: crop-önizleme-arkaplan silme akışını tekrar çalışır ve daha tutarlı hale getirdik.
+Sıralama ve arama geliştirmesi yaptık: kategori seçimlerinde ve kıyafet listelerinde alfabetik düzeni ekledik, Kıyafetlerim tarafında arama desteği ekledik.
+Demo için genel hata temizliği yaptık: kırılan noktaları toparlayıp ekranların tekrar sorunsuz açılmasını sağladık.
