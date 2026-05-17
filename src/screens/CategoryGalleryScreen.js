@@ -2,13 +2,13 @@ import React, { useCallback, useState } from "react";
 import {
   Alert,
   FlatList,
-  Image,
   SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import RemoteImage from "../components/RemoteImage";
 import { useFocusEffect } from "@react-navigation/native";
 import { getClothes, removeClothing } from "../services/storage";
 
@@ -63,7 +63,7 @@ export default function CategoryGalleryScreen({ route }) {
           contentContainerStyle={styles.listContent}
           renderItem={({ item }) => (
             <View style={styles.card}>
-              <Image source={{ uri: item.imageUri }} style={styles.image} />
+              <RemoteImage publicUri={item.imageUri} clothId={item.id} style={styles.image} />
               <Text style={styles.category}>{item.category}</Text>
               {!!item.description && (
                 <Text numberOfLines={2} style={styles.description}>
@@ -87,7 +87,7 @@ export default function CategoryGalleryScreen({ route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f4f2ed",
+    backgroundColor: "#EAF7FF",
     paddingHorizontal: 14,
     paddingTop: 12,
   },
@@ -113,13 +113,13 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#e7dfd3",
+    borderColor: "#CFE8F7",
     overflow: "hidden",
   },
   image: {
     width: "100%",
     height: 180,
-    backgroundColor: "#ece4d8",
+    backgroundColor: "#EAF7FF",
   },
   category: {
     fontSize: 12,

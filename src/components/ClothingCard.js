@@ -1,10 +1,16 @@
 import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
+import RemoteImage from "./RemoteImage";
 
 export default function ClothingCard({ item }) {
   return (
     <View style={styles.card}>
-      <Image source={{ uri: item.imageUri }} style={styles.image} />
+      <RemoteImage
+        publicUri={item.imageUri}
+        clothId={item.id}
+        style={styles.image}
+        fallback={<Text>Önizleme yok</Text>}
+      />
       <View style={styles.metaRow}>
         <Text style={styles.category}>{item.category}</Text>
       </View>

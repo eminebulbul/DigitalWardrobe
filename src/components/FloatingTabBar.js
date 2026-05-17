@@ -40,7 +40,7 @@ export default function FloatingTabBar({ state, descriptors, navigation, variant
 			shell: styles.shellFolder,
 			itemActive: styles.itemFolderActive,
 			textActive: styles.textPrimary,
-			iconActive: "#2d6a5a",
+			iconActive: "#F89DAC",
 		},
 	};
 
@@ -104,7 +104,7 @@ export default function FloatingTabBar({ state, descriptors, navigation, variant
 								<Ionicons
 									name={isFocused ? meta.iconActive : meta.iconIdle}
 									size={20}
-									color={isFocused ? skin.iconActive : "#8b8378"}
+									color={isFocused ? skin.iconActive : "#8FA4B2"}
 								/>
 								<Animated.Text
 									style={[styles.textBase, animatedTextStyle, isFocused && skin.textActive]}
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
 	shell: {
 		height: 70,
 		borderWidth: 1,
-		borderColor: "#e6ddd0",
+		borderColor: "#CFE8F7",
 		backgroundColor: "#ffffff",
 		flexDirection: "row",
 		padding: 8,
@@ -159,13 +159,13 @@ const styles = StyleSheet.create({
 		flex: 1,
 	},
 	itemDefaultActive: {
-		backgroundColor: "#2d6a5a",
+		backgroundColor: "#F89DAC",
 	},
 	itemFolderActive: {
 		marginTop: -8,
-		backgroundColor: "#f4f2ed",
+		backgroundColor: "#EAF7FF",
 		borderWidth: 1,
-		borderColor: "#e6ddd0",
+		borderColor: "#CFE8F7",
 		borderTopLeftRadius: 12,
 		borderTopRightRadius: 12,
 		borderBottomLeftRadius: 6,
@@ -175,12 +175,12 @@ const styles = StyleSheet.create({
 	textBase: {
 		fontSize: 11,
 		fontWeight: "700",
-		color: "#8b8378",
+		color: "#8FA4B2",
 	},
 	textOnActive: {
 		color: "#ffffff",
 	},
 	textPrimary: {
-		color: "#2d6a5a",
+		color: "#F89DAC",
 	},
 });

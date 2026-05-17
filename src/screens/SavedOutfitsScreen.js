@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import {
   Alert,
-  Image,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -9,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import RemoteImage from "../components/RemoteImage";
 import { useFocusEffect } from "@react-navigation/native";
 import { addOutfit, getClothes, getOutfits, removeOutfit } from "../services/storage";
 
@@ -102,7 +102,7 @@ export default function SavedOutfitsScreen() {
                 <View style={styles.piecesRow}>
                   {pieces.map((piece) => (
                     <View key={piece.id} style={styles.pieceCard}>
-                      <Image source={{ uri: piece.imageUri }} style={styles.image} />
+                      <RemoteImage publicUri={piece.imageUri} clothId={piece.id} style={styles.image} />
                       <Text style={styles.category}>{piece.category}</Text>
                     </View>
                   ))}
@@ -125,7 +125,7 @@ export default function SavedOutfitsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f1ede5",
+    backgroundColor: "#EAF7FF",
   },
   content: {
     padding: 16,
@@ -133,11 +133,11 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     borderRadius: 18,
-    backgroundColor: "#a855a8",
+    backgroundColor: "#F89DAC",
     paddingHorizontal: 16,
     paddingVertical: 18,
     marginBottom: 14,
-    shadowColor: "#a855a8",
+    shadowColor: "#F89DAC",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   heroKicker: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#f3e5f5",
+    color: "#FFF4F7",
     letterSpacing: 1.2,
     marginBottom: 4,
   },
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   },
   heroSubtitle: {
     fontSize: 13,
-    color: "#f3e5f5",
+    color: "#FFF4F7",
     fontWeight: "500",
   },
   title: {
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#e8dfd3",
+    borderColor: "#CFE8F7",
     alignItems: "center",
     marginBottom: 20,
     shadowColor: "#000",
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   outfitCard: {
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#e8dfd3",
+    borderColor: "#CFE8F7",
     backgroundColor: "#fff",
     padding: 12,
     marginBottom: 12,
@@ -225,22 +225,22 @@ const styles = StyleSheet.create({
   pieceCard: {
     width: "31%",
     borderRadius: 10,
-    backgroundColor: "#fbf9f4",
+    backgroundColor: "#F5FBFF",
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#e8dfd3",
+    borderColor: "#CFE8F7",
   },
   image: {
     width: "100%",
     height: 84,
-    backgroundColor: "#ece5db",
+    backgroundColor: "#EAF7FF",
   },
   category: {
     fontSize: 11,
     fontWeight: "700",
     color: "#585148",
     padding: 6,
-    backgroundColor: "#f9f7f2",
+    backgroundColor: "#F5FBFF",
   },
   deleteButton: {
     marginTop: 8,

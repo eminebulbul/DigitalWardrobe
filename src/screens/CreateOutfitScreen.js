@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import {
   Alert,
-  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import RemoteImage from "../components/RemoteImage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
 import { buildRandomOutfit } from "../utils/shuffle";
@@ -147,7 +147,7 @@ export default function CreateOutfitScreen({ navigation }) {
           <View style={styles.grid}>
             {randomOutfit.map((item) => (
               <View key={item.id} style={styles.card}>
-                <Image source={{ uri: item.imageUri }} style={styles.image} />
+                <RemoteImage publicUri={item.imageUri} clothId={item.id} style={styles.image} />
                 <Text style={styles.category}>{item.category}</Text>
               </View>
             ))}
@@ -184,25 +184,25 @@ export default function CreateOutfitScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f1ede5",
+    backgroundColor: "#EAF7FF",
   },
   content: {
     padding: 16,
     paddingBottom: 110,
   },
   heroCard: {
-    backgroundColor: "#a855a8",
+    backgroundColor: "#F89DAC",
     borderRadius: 18,
     padding: 18,
     marginBottom: 14,
-    shadowColor: "#a855a8",
+    shadowColor: "#F89DAC",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
   },
   kicker: {
-    color: "#f3e5f5",
+    color: "#FFF4F7",
     fontWeight: "800",
     letterSpacing: 1.2,
     fontSize: 11,
@@ -216,14 +216,14 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: 4,
-    color: "#f3e5f5",
+    color: "#FFF4F7",
     fontWeight: "500",
     fontSize: 13,
   },
   summary: {
     marginTop: 10,
     marginBottom: 12,
-    color: "#f3e5f5",
+    color: "#FFF4F7",
     fontWeight: "700",
     fontSize: 13,
   },
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   shuffleText: {
-    color: "#a855a8",
+    color: "#F89DAC",
     fontWeight: "800",
     fontSize: 15,
   },
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#e8dfd3",
+    borderColor: "#CFE8F7",
     marginBottom: 14,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
   emptyActionButton: {
     marginTop: 12,
     borderRadius: 10,
-    backgroundColor: "#a855a8",
+    backgroundColor: "#F89DAC",
     alignItems: "center",
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -290,7 +290,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#e8dfd3",
+    borderColor: "#CFE8F7",
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -301,14 +301,14 @@ const styles = StyleSheet.create({
   image: {
     width: "100%",
     height: 170,
-    backgroundColor: "#ece4d8",
+    backgroundColor: "#EAF7FF",
   },
   category: {
     padding: 10,
     fontWeight: "700",
     color: "#514a41",
     fontSize: 13,
-    backgroundColor: "#f9f7f2",
+    backgroundColor: "#F5FBFF",
   },
   nameInputWrap: {
     marginBottom: 10,
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   },
   nameInput: {
     borderWidth: 1,
-    borderColor: "#e8dfd3",
+    borderColor: "#CFE8F7",
     backgroundColor: "#fff",
     borderRadius: 12,
     paddingHorizontal: 12,
@@ -330,12 +330,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   saveButton: {
-    backgroundColor: "#a855a8",
+    backgroundColor: "#F89DAC",
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 4,
-    shadowColor: "#a855a8",
+    shadowColor: "#F89DAC",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 4,

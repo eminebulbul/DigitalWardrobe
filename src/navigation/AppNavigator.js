@@ -1,15 +1,21 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { TouchableOpacity, Text } from "react-native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { TouchableOpacity, Text, ActivityIndicator, View } from "react-native";
 import AddClothingScreen from "../screens/AddClothingScreen";
 import CreateOutfitScreen from "../screens/CreateOutfitScreen";
 import CollectionScreen from "../screens/CollectionScreen";
 import CategoryGalleryScreen from "../screens/CategoryGalleryScreen";
+import ProfileScreen from "../screens/ProfileScreen";
+import LoginScreen from "../screens/LoginScreen";
+import RegisterScreen from "../screens/RegisterScreen";
 import FloatingTabBar from "../components/FloatingTabBar";
+import { useAuth } from "../context/AuthContext";
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
-export default function AppNavigator() {
+function AppTabs() {
   return (
     <Tab.Navigator
       tabBar={(props) => <FloatingTabBar {...props} variant="folder" />}
@@ -48,6 +54,7 @@ export default function AppNavigator() {
       <Tab.Screen name="Ana Sayfa" component={CreateOutfitScreen} />
       <Tab.Screen name="Kıyafet Ekle" component={AddClothingScreen} />
       <Tab.Screen name="Koleksiyon" component={CollectionScreen} />
+      <Tab.Screen name="Profil" component={ProfileScreen} />
       <Tab.Screen
         name="Kategori Galerisi"
         component={CategoryGalleryScreen}
@@ -59,4 +66,32 @@ export default function AppNavigator() {
       />
     </Tab.Navigator>
   );
+}
+
+function AuthStack() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animationEnabled: true,
+      }}
+    >
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+    </Stack.Navigator>
+  );
+}
+
+export default function AppNavigator() {
+  const { isSignedIn, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#EAF7FF" }}>
+        <ActivityIndicator size="large" color="#F89DAC" />
+      </View>
+    );
+  }
+
+  return isSignedIn ? <AppTabs /> : <AuthStack />;
 }

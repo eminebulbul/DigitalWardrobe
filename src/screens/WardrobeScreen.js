@@ -139,17 +139,17 @@ export default function WardrobeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f1ede5",
+    backgroundColor: "#EAF7FF",
     paddingHorizontal: 14,
     paddingTop: 10,
   },
   heroCard: {
     borderRadius: 18,
-    backgroundColor: "#a855a8",
+    backgroundColor: "#F89DAC",
     paddingHorizontal: 16,
     paddingVertical: 18,
     marginBottom: 14,
-    shadowColor: "#a855a8",
+    shadowColor: "#F89DAC",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   heroKicker: {
     fontSize: 11,
     fontWeight: "700",
-    color: "#f3e5f5",
+    color: "#FFF4F7",
     letterSpacing: 1.2,
     marginBottom: 10,
   },
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 12,
-    color: "#f3e5f5",
+    color: "#FFF4F7",
     fontWeight: "600",
   },
   statDivider: {
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   panelCard: {
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e8dfd3",
+    borderColor: "#CFE8F7",
     backgroundColor: "#fff",
     padding: 12,
     marginBottom: 10,
@@ -210,9 +210,9 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     borderWidth: 1,
-    borderColor: "#ddd4c9",
+    borderColor: "#CFE8F7",
     borderRadius: 10,
-    backgroundColor: "#fcfaf6",
+    backgroundColor: "#F5FBFF",
     paddingHorizontal: 10,
     paddingVertical: 9,
     color: "#3d3731",
@@ -227,14 +227,14 @@ const styles = StyleSheet.create({
   filterButton: {
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#ddd4c9",
+    borderColor: "#CFE8F7",
     paddingHorizontal: 12,
     paddingVertical: 6,
     backgroundColor: "#fff",
   },
   filterButtonActive: {
-    backgroundColor: "#a855a8",
-    borderColor: "#a855a8",
+    backgroundColor: "#F89DAC",
+    borderColor: "#F89DAC",
   },
   filterText: {
     color: "#5b554d",

@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
 import {
   Alert,
-  Image,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -9,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import RemoteImage from "../components/RemoteImage";
 import { useFocusEffect } from "@react-navigation/native";
 import { CATEGORIES } from "../constants/categories";
 import {
@@ -74,6 +74,7 @@ export default function CollectionScreen({ navigation }) {
       getClothes(),
       getOutfits(),
     ]);
+    console.log("CollectionScreen.loadData -> clothes:", savedClothes.map(c => ({ id: c.id, imageUri: c.imageUri })));
     setClothes(savedClothes);
     setOutfits(savedOutfits.slice().reverse());
   }, []);
@@ -198,7 +199,7 @@ export default function CollectionScreen({ navigation }) {
                       })
                     }
                   >
-                    <Image source={{ uri: item.imageUri }} style={styles.clothImage} />
+                    <RemoteImage publicUri={item.imageUri} clothId={item.id} style={styles.clothImage} />
                     <Text style={styles.clothCategory}>{item.category}</Text>
                     {!!item.description && (
                       <Text numberOfLines={2} style={styles.clothDescription}>
@@ -231,7 +232,7 @@ export default function CollectionScreen({ navigation }) {
                     <View style={styles.piecesRow}>
                       {pieces.map((piece) => (
                         <View key={piece.id} style={styles.pieceCard}>
-                          <Image source={{ uri: piece.imageUri }} style={styles.image} />
+                          <RemoteImage publicUri={piece.imageUri} clothId={piece.id} style={styles.image} />
                           <Text style={styles.category}>{piece.category}</Text>
                           {!!piece.description && (
                             <Text style={styles.description}>{piece.description}</Text>
@@ -259,7 +260,7 @@ export default function CollectionScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f1ede5",
+    backgroundColor: "#EAF7FF",
   },
   content: {
     padding: 16,
@@ -267,18 +268,18 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     borderRadius: 18,
-    backgroundColor: "#a855a8",
+    backgroundColor: "#F89DAC",
     paddingHorizontal: 16,
     paddingVertical: 18,
     marginBottom: 14,
-    shadowColor: "#a855a8",
+    shadowColor: "#F89DAC",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
   },
   kicker: {
-    color: "#f3e5f5",
+    color: "#FFF4F7",
     fontWeight: "800",
     fontSize: 11,
     letterSpacing: 1.2,
@@ -293,7 +294,7 @@ const styles = StyleSheet.create({
   heroSubtitle: {
     marginTop: 0,
     marginBottom: 14,
-    color: "#f3e5f5",
+    color: "#FFF4F7",
     fontWeight: "500",
     fontSize: 13,
   },
@@ -313,7 +314,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   statLabel: {
-    color: "#f3e5f5",
+    color: "#FFF4F7",
     fontWeight: "600",
     fontSize: 12,
   },
@@ -326,7 +327,7 @@ const styles = StyleSheet.create({
   panelCard: {
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#e8dfd3",
+    borderColor: "#CFE8F7",
     backgroundColor: "#fff",
     padding: 12,
     shadowColor: "#000",
@@ -345,8 +346,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#e7dfd3",
-    backgroundColor: "#f9f6f0",
+    borderColor: "#CFE8F7",
+    backgroundColor: "#F5FBFF",
     padding: 4,
     marginBottom: 12,
   },
@@ -357,8 +358,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   segmentButtonActive: {
-    backgroundColor: "#a855a8",
-    shadowColor: "#a855a8",
+    backgroundColor: "#F89DAC",
+    shadowColor: "#F89DAC",
     shadowOpacity: 0.14,
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 6,
@@ -379,14 +380,14 @@ const styles = StyleSheet.create({
   filterChip: {
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#d8cebf",
+    borderColor: "#CFE8F7",
     backgroundColor: "#fff",
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
   filterChipActive: {
-    borderColor: "#a855a8",
-    backgroundColor: "#f3e5f5",
+    borderColor: "#F89DAC",
+    backgroundColor: "#FFF4F7",
   },
   filterChipText: {
     color: "#5e564c",
@@ -394,7 +395,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   filterChipTextActive: {
-    color: "#a855a8",
+    color: "#F89DAC",
   },
   clothesGrid: {
     flexDirection: "row",
@@ -406,7 +407,7 @@ const styles = StyleSheet.create({
     width: "48%",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#e8dfd3",
+    borderColor: "#CFE8F7",
     backgroundColor: "#fff",
     overflow: "hidden",
     marginBottom: 4,
@@ -419,7 +420,7 @@ const styles = StyleSheet.create({
   clothImage: {
     width: "100%",
     height: 160,
-    backgroundColor: "#ece5db",
+    backgroundColor: "#EAF7FF",
   },
   clothCategory: {
     fontSize: 12,
@@ -442,8 +443,8 @@ const styles = StyleSheet.create({
   outfitCard: {
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#e8dfd3",
-    backgroundColor: "#fcfaf6",
+    borderColor: "#CFE8F7",
+    backgroundColor: "#F5FBFF",
     padding: 12,
     marginBottom: 12,
     shadowColor: "#000",
@@ -472,15 +473,15 @@ const styles = StyleSheet.create({
   pieceCard: {
     width: "31%",
     borderRadius: 10,
-    backgroundColor: "#fbf9f4",
+    backgroundColor: "#F5FBFF",
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#e8dfd3",
+    borderColor: "#CFE8F7",
   },
   image: {
     width: "100%",
     height: 84,
-    backgroundColor: "#ece5db",
+    backgroundColor: "#EAF7FF",
   },
   category: {
     fontSize: 11,
@@ -488,7 +489,7 @@ const styles = StyleSheet.create({
     color: "#585148",
     paddingHorizontal: 6,
     paddingVertical: 6,
-    backgroundColor: "#f9f7f2",
+    backgroundColor: "#F5FBFF",
   },
   description: {
     fontSize: 10,
