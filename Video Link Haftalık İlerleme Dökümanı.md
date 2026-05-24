@@ -11,6 +11,7 @@
 - **4. Video Linki:**  https://youtu.be/kr-2wAUSk0k
 - **5.,6.,7. Video Linki:**  https://youtu.be/ruip0A65qUU
 - **8. Video Linki:**  https://youtu.be/u3b4JVTZ0I0
+- **9. Video Linki** https://youtu.be/E30fnj5sqY0
 ---
 
 ## 1. Hafta İlerleme Raporu
@@ -199,3 +200,6 @@ Bu haftada, 7. haftada tasarladığımız bulut sistemi tam olarak uygulandı ve
 ### Sonuç
 
 8. hafta sonunda proje production-ready bir cloud mimarisine ulaştı: Güvenli JWT auth, user_id izolasyonu, hibrid local/cloud sync, flexible image storage ve comprehensive error handling. Uygulama online/offline her ortamda çalışıyor, veri encryption ve privacy sağlanıyor.
+
+
+9. Hafta profil ekrani eklendi. online platforma dönüştürüldü.
