@@ -95,6 +95,7 @@ export async function getClothes(userId = CURRENT_USER_ID) {
       imageUri: mapClothingImageUrl(c, token),
       category: c.category,
       description: c.description,
+      visibility: c.visibility,
       createdAt: c.created_at,
     }));
   }
@@ -136,6 +137,7 @@ export async function addClothing(item) {
       imageUri: mapClothingImageUrl(data.cloth, token),
       category: data.cloth.category,
       description: data.cloth.description,
+      visibility: data.cloth.visibility,
       createdAt: data.cloth.created_at,
     };
   }
@@ -191,6 +193,7 @@ export async function getOutfits(userId = CURRENT_USER_ID) {
       userId: o.user_id,
       name: o.name,
       clothesIds: o.clothes_ids,
+      visibility: o.visibility,
       createdAt: o.created_at,
     }));
   }
@@ -238,4 +241,265 @@ export async function removeOutfit(outfitId, userId = CURRENT_USER_ID) {
     (item) => !(item.userId === userId && item.id === outfitId)
   );
   await AsyncStorage.setItem(OUTFITS_KEY, JSON.stringify(nextOutfits));
+}
+
+// ===== SOCIAL FEATURES =====
+
+export async function updateClothingVisibility(clothingId, visibility) {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_BASE}/api/clothes/${clothingId}/visibility`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ visibility }),
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to update clothing visibility");
+  }
+
+  return {
+    id: data.cloth.id,
+    userId: data.cloth.user_id,
+    imageUri: mapClothingImageUrl(data.cloth, token),
+    category: data.cloth.category,
+    description: data.cloth.description,
+    visibility: data.cloth.visibility,
+    createdAt: data.cloth.created_at,
+  };
+}
+
+export async function getPublicClothes(userId) {
+  const token = await getAuthToken();
+
+  const res = await fetch(`${API_BASE}/api/users/${userId}/clothes`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to load public clothes");
+  }
+
+  return data.clothes.map((c) => ({
+    id: c.id,
+    userId: c.user_id,
+    imageUri: mapClothingImageUrl(c, token),
+    category: c.category,
+    createdAt: c.created_at,
+  }));
+}
+
+export async function updateOutfitVisibility(outfitId, visibility) {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_BASE}/api/outfits/${outfitId}/visibility`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ visibility }),
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to update outfit visibility");
+  }
+
+  return data.outfit;
+}
+
+export async function getPublicOutfits(userId) {
+  const token = await getAuthToken();
+
+  const res = await fetch(`${API_BASE}/api/users/${userId}/outfits`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to load public outfits");
+  }
+
+  return data.outfits;
+}
+
+export async function getDiscoverOutfits(page = 1, sort = "recent") {
+  const token = await getAuthToken();
+
+  const res = await fetch(
+    `${API_BASE}/api/discover/outfits?page=${page}&limit=20&sort=${sort}`,
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }
+  );
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to load discover feed");
+  }
+
+  return {
+    outfits: data.outfits,
+    pagination: data.pagination,
+  };
+}
+
+export async function getDiscoverClothes(page = 1, sort = "recent") {
+  const token = await getAuthToken();
+
+  const res = await fetch(
+    `${API_BASE}/api/discover/clothes?page=${page}&limit=20&sort=${sort}`,
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    }
+  );
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to load discover clothes");
+  }
+
+  return {
+    clothes: data.clothes.map((c) => ({
+      id: c.id,
+      userId: c.user_id,
+      imageUri: mapClothingImageUrl(c, token),
+      category: c.category,
+      description: c.description,
+      creatorName: c.creator_name,
+      creatorAvatar: c.creator_avatar,
+      createdAt: c.created_at,
+    })),
+    pagination: data.pagination,
+  };
+}
+
+export async function saveOutfit(outfitId) {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_BASE}/api/saved-outfits`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ outfit_id: outfitId }),
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to save outfit");
+  }
+
+  return data.saved_outfit;
+}
+
+export async function getSavedOutfits() {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_BASE}/api/saved-outfits`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to load saved outfits");
+  }
+
+  return data.saved_outfits;
+}
+
+export async function removeSavedOutfit(outfitId) {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_BASE}/api/saved-outfits/${outfitId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to remove saved outfit");
+  }
+
+  return true;
+}
+
+export async function getUserProfile(userId) {
+  const token = await getAuthToken();
+
+  const res = await fetch(`${API_BASE}/api/users/${userId}/profile`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to load user profile");
+  }
+
+  return data.user;
+}
+
+export async function getMyProfile() {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_BASE}/api/profile/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to load my profile");
+  }
+
+  return {
+    user: data.user,
+    profile: data.profile,
+  };
+}
+
+export async function deleteClothing(clothId) {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_BASE}/api/clothes/${clothId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to delete clothing");
+  }
+
+  return true;
+}
+
+export async function deleteOutfit(outfitId) {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_BASE}/api/outfits/${outfitId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to delete outfit");
+  }
+
+  return true;
 }

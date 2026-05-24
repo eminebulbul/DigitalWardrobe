@@ -16,11 +16,15 @@ import {
   getClothes,
   getOutfits,
   removeOutfit,
+  getSavedOutfits,
+  removeSavedOutfit,
+  updateClothingVisibility,
 } from "../services/storage";
 
 export default function CollectionScreen({ navigation }) {
   const [clothes, setClothes] = useState([]);
   const [outfits, setOutfits] = useState([]);
+  const [savedOutfits, setSavedOutfits] = useState([]);
   const [activeView, setActiveView] = useState("outfits");
   const [selectedCategory, setSelectedCategory] = useState("Tümü");
 
@@ -41,10 +45,12 @@ export default function CollectionScreen({ navigation }) {
   );
 
   const categoryOptions = useMemo(
-    () =>
-      ["Tümü", ...CATEGORIES].sort((a, b) =>
+    () => {
+      const sorted = [...CATEGORIES].sort((a, b) =>
         a.localeCompare(b, "tr-TR", { sensitivity: "base" })
-      ),
+      );
+      return ["Tümü", ...sorted];
+    },
     []
   );
 
@@ -70,13 +76,19 @@ export default function CollectionScreen({ navigation }) {
   }, [clothes, selectedCategory]);
 
   const loadData = useCallback(async () => {
-    const [savedClothes, savedOutfits] = await Promise.all([
-      getClothes(),
-      getOutfits(),
-    ]);
-    console.log("CollectionScreen.loadData -> clothes:", savedClothes.map(c => ({ id: c.id, imageUri: c.imageUri })));
-    setClothes(savedClothes);
-    setOutfits(savedOutfits.slice().reverse());
+    try {
+      const [savedClothes, savedOutfits, mySavedOutfits] = await Promise.all([
+        getClothes(),
+        getOutfits(),
+        getSavedOutfits().catch(() => []),
+      ]);
+      console.log("CollectionScreen.loadData -> clothes:", savedClothes.length, "outfits:", savedOutfits.length);
+      setClothes(savedClothes);
+      setOutfits(savedOutfits.slice().reverse());
+      setSavedOutfits(mySavedOutfits.slice().reverse());
+    } catch (error) {
+      console.error("CollectionScreen.loadData ERROR:", error);
+    }
   }, []);
 
   useFocusEffect(
@@ -147,6 +159,20 @@ export default function CollectionScreen({ navigation }) {
           </TouchableOpacity>
 
           <TouchableOpacity
+            style={[styles.segmentButton, activeView === "saved" && styles.segmentButtonActive]}
+            onPress={() => setActiveView("saved")}
+          >
+            <Text
+              style={[
+                styles.segmentText,
+                activeView === "saved" && styles.segmentTextActive,
+              ]}
+            >
+              Kaydedilenler
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
             style={[styles.segmentButton, activeView === "clothes" && styles.segmentButtonActive]}
             onPress={() => setActiveView("clothes")}
           >
@@ -190,15 +216,7 @@ export default function CollectionScreen({ navigation }) {
             ) : (
               <View style={styles.clothesGrid}>
                 {filteredClothes.map((item) => (
-                  <TouchableOpacity
-                    key={item.id}
-                    style={styles.clothCard}
-                    onPress={() =>
-                      navigation.navigate("Kategori Galerisi", {
-                        categoryName: item.category,
-                      })
-                    }
-                  >
+                  <View key={item.id} style={styles.clothCard}>
                     <RemoteImage publicUri={item.imageUri} clothId={item.id} style={styles.clothImage} />
                     <Text style={styles.clothCategory}>{item.category}</Text>
                     {!!item.description && (
@@ -206,9 +224,83 @@ export default function CollectionScreen({ navigation }) {
                         {item.description}
                       </Text>
                     )}
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.shareButton,
+                        item.visibility === "public" && styles.shareButtonActive,
+                      ]}
+                      onPress={async () => {
+                        try {
+                          console.log("Sharing cloth:", item.id, "current visibility:", item.visibility);
+                          const newVisibility =
+                            item.visibility === "public" ? "private" : "public";
+                          await updateClothingVisibility(item.id, newVisibility);
+                          console.log("Visibility updated to:", newVisibility);
+                          await loadData();
+                        } catch (error) {
+                          console.error("Share error:", error);
+                          Alert.alert("Hata", error.message || "Paylaş işlemi başarısız");
+                        }
+                      }}
+                    >
+                      <Text style={styles.shareButtonText}>
+                        {item.visibility === "public" ? "🌐 Paylaşılıyor" : "🔒 Özel"}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 ))}
               </View>
+            )}
+          </View>
+        ) : activeView === "saved" ? (
+          <View style={styles.panelCard}>
+            <Text style={styles.sectionTitle}>Kaydedilenler</Text>
+            {!savedOutfits.length ? (
+              <Text style={styles.emptyText}>Henüz kaydedilmiş kombin bulunmuyor.</Text>
+            ) : (
+              savedOutfits.map((outfit, index) => {
+                const pieces = outfit.clothes_ids
+                  .map((id) => clothesMap[id])
+                  .filter(Boolean);
+                const title = outfit.name?.trim() || `Kaydedilmiş Kombin #${savedOutfits.length - index}`;
+                const creatorText = `${outfit.creator_name} tarafından`;
+
+                return (
+                  <View key={outfit.id} style={styles.outfitCard}>
+                    <Text style={styles.outfitTitle}>{title}</Text>
+                    <Text style={styles.outfitMeta}>{creatorText}</Text>
+                    <View style={styles.piecesRow}>
+                      {pieces.map((piece) => (
+                        <View key={piece.id} style={styles.pieceCard}>
+                          <RemoteImage publicUri={piece.imageUri} clothId={piece.id} style={styles.image} />
+                          <Text style={styles.category}>{piece.category}</Text>
+                          {!!piece.description && (
+                            <Text style={styles.description}>{piece.description}</Text>
+                          )}
+                        </View>
+                      ))}
+                    </View>
+                    <TouchableOpacity
+                      style={[styles.deleteButton, styles.deleteButtonRed]}
+                      onPress={() => {
+                        Alert.alert("Kaydı Sil", "Bu kombin kaydınızdan kaldırılacak. Emin misin?", [
+                          { text: "Vazgeç", style: "cancel" },
+                          {
+                            text: "Sil",
+                            style: "destructive",
+                            onPress: async () => {
+                              await removeSavedOutfit(outfit.id);
+                              await loadData();
+                            },
+                          },
+                        ]);
+                      }}
+                    >
+                      <Text style={styles.deleteButtonText}>Kaydı Sil</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })
             )}
           </View>
         ) : (
@@ -496,6 +588,24 @@ const styles = StyleSheet.create({
     color: "#5f574d",
     paddingHorizontal: 6,
     paddingBottom: 6,
+  },
+  shareButton: {
+    marginTop: 8,
+    borderRadius: 8,
+    backgroundColor: "#F5FBFF",
+    borderWidth: 1,
+    borderColor: "#CFE8F7",
+    alignItems: "center",
+    paddingVertical: 6,
+  },
+  shareButtonActive: {
+    backgroundColor: "#E8F5FF",
+    borderColor: "#1E90FF",
+  },
+  shareButtonText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#3f3a34",
   },
   deleteButton: {
     marginTop: 8,
