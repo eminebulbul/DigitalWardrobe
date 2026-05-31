@@ -114,4 +114,24 @@ Bu üç haftada uygulamanın UX/UI kalitesi artırıldı, shuffle algoritması a
 
 ### Frontend Geliştirmeleri
 - **Context API:** `AuthContext.js` ile login durumu, token yönetimi ve `bootstrapAsync` mekanizması kuruldu.
-- **Hibrid Veri Senkronizasyonu:** `getAuthToken()` kontrolüyle API'ye veya `AsyncStorage`'a yazma işlemleri (`addClothing`,
+- **Hibrid Veri Senkronizasyonu:** `getAuthToken()` kontrolüyle API'ye veya `AsyncStorage`'a yazma işlemleri (`addClothing`, `addOutfit` vb.) güncellendi.
+- **RemoteImage Bileşeni:** Public URL ile Token Auth Proxy mantığını ayıran akıllı resim bileşeni yazıldı.
+
+---
+
+## 📅 9. Hafta: Sosyalleşme ve Profil
+
+- **Profil Ekranı:** Kullanıcılara özel profil ekranı eklendi.
+- **Online Platform:** Uygulama tamamen bireysel bir dolap olmaktan çıkıp kullanıcıların birbirini görebildiği online bir platforma dönüştürüldü.
+
+---
+
+## 📅 10. Hafta: UX Temizliği, Data Bug'ları ve Yeni Tema
+
+Bu hafta uygulamanın mimarisi ciddi şekilde test edildi ve full-stack veri akışı mantığındaki hatalar temizlendi.
+
+- 🧩 **Ortak Bileşen ve UX Temizliği:** `OutfitCard` tek bir merkezde toplanıp evrensel bir bileşene çevrildi. Profil ekranı sadece "Herkese Açık" (Public) bir vitrin haline getirildi; Paylaş/Gizle gibi yönetim butonları ait olduğu asıl yere (Koleksiyon ekranına) taşındı.
+- 🔗 **Veri Sahipliği (Data Ownership) Çözümü:** Başkalarının Keşfet'teki kombinlerine bakıldığında kıyafetlerin yüklenmemesi (sarı kutu sorunu) çözüldü. Arayüzün parçaları kendi yerel dolabında arama yapısı silindi; veriler doğrudan backend'den resim linkleriyle `populate` edilmiş şekilde çekildi.
+- 👁️ **Görünürlük (Visibility) Mantık Hatası:** Paylaşılan bir kombinin vitrine çıkmasına rağmen içindeki kıyafetlerin `private` kalarak güvenlik duvarına takılması sorunu tespit edildi. Kombin paylaşıldığında içindeki parçaların da otomatik `public` olmasını sağlayan veritabanı sorguları eklendi.
+- 🐛 **Kritik Hata (Bug) Avı:** Kombin kaydettikten sonra sistemi çökerten yönlendirme (navigation) hatası düzeltildi. Ayrıca taşıma sırasında kaybolan `/api/remove-background` rotası tekrar backend'e bağlanarak 404 hatası ortadan kaldırıldı.
+- 🎨 **Canlı ve Enerjik Yeni Tema (`theme.js`):** Uygulamanın soluk ve cansız renklerinden tamamen kurtulundu. Çiçek bahçesi paletinden ilham alınarak Deep Cerise (canlı pembe), Lavender Violet (mor) ve Honey Gold (sarı) renklerini merkeze alan, enerjik ve modern bir tema mimarisi yaratıldı. Tüm ekranlar bu merkezi temaya bağlandı.
