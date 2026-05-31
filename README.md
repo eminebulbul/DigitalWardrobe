@@ -1,85 +1,39 @@
-# Dijital Kiyafet Dolabi (React Native + Expo)
+# 👗 Dijital Gardırop (React Native + Node.js)
+Kıyafetleri dijital ortamda saklama, yönetme ve akıllı algoritmalarla (Shuffle) yeni kombinler oluşturma amacıyla hazırlanmış tam yığın (full-stack) mobil uygulama projesi.
 
-1. Hafta videosu; https://youtu.be/BmEYuUqrrTc
+## ✨ Özellikler ve Ekranlar
 
-Bu proje, kiyafetleri dijital ortamda saklama ve gardiroptan kombin olusturma amaciyla hazirlanmis bir mobil uygulama iskeletidir.
+- **Kıyafet Yönetimi:** Kameradan veya galeriden fotoğraf ekleme, arka planı (Remove.bg) otomatik silme ve kategoriye göre saklama.
+- **Gardırobum:** Tüm kıyafetlerin listesi ve kategoriye göre dinamik filtreleme.
+- **Akıllı Kombin (Shuffle):** Gardırobunuzdaki parçalardan kurallara uygun rastgele kombinler üretme.
+- **Kombinlerim:** Üretilen kombinleri isimlendirerek kaydetme ve daha sonra görüntüleme.
+- **Profil:** Kullanıcı bilgilerini ve paylaşılan içerikleri görüntüleme.
+- **Hibrit Senkronizasyon:** Hem cihazda (`AsyncStorage`) hem de bulutta veri saklama.
 
-## Ozellikler
+## 🛠️ Kullanılan Teknolojiler
 
-- Kiyafet fotografi ekleme (galeri veya kamera)
-- Kategoriye gore kiyafet saklama
-- Gardiropta kiyafet listeleme ve filtreleme
-- Rastgele kombin olusturma (shuffle)
-- Kombin kaydetme ve kayitli kombinleri goruntuleme
-- Oturum bilgisini `AsyncStorage` ile saklama
-- Kiyafet ve kombin verisini backend + PostgreSQL ile saklama
-- Görselleri Cloudflare R2 (veya S3 uyumlu depolama) üzerinde saklama
+- **Mobil Frontend:** React Native, Expo, React Navigation
+- **Backend Sunucu:** Node.js, Express.js
+- **Veritabanı:** PostgreSQL
+- **Güvenlik & Kimlik Doğrulama:** JWT (JSON Web Tokens), Bcrypt
+- **Medya Depolama:** Cloudflare R2 / S3 Uyumlu Depolama (Opsiyonel lokal depolama)
 
-## Ekranlar
+## 🏗️ Veri Modelleri
 
-- `Gardirobum`: Tum kiyafetlerin listesi ve kategori filtreleme
-- `Kiyafet Ekle`: Foto cekme/secme, kategori secme, kaydetme
-- `Kombin`: Shuffle ile kombin uretme ve kaydetme
-- `Kombinlerim`: Kaydedilen kombinleri gorme
+Sistem Firebase yerine kendi backend mimarimizi kullanır. Görseller veritabanında tutulmaz; S3/R2 veya lokalde saklanır, veritabanında sadece URL ve metadata yer alır.
 
-## Veri Modeli
-
-Kiyafet objesi:
-
-```json
-{
-  "id": "string",
-  "userId": "string",
-  "imageUri": "string",
-  "category": "string"
-}
-```
-
-Kombin objesi:
-
-```json
-{
-  "id": "string",
-  "userId": "string",
-  "clothesIds": ["string"],
-  "createdAt": "ISO-8601"
-}
-```
-
-## Kurulum
-
-```bash
-npm install
-npm run start
-```
-
-Ardindan Expo ekranindan iOS simulatoru veya fiziksel cihaz ile uygulamayi acabilirsin.
-
-## Backend Mimarisi
-
-Bu proje için Firebase yerine kendi backend yapisini kullanıyoruz.
-
-- Backend: Node.js + Express
-- Veritabanı: PostgreSQL
-- Görseller: Cloudflare R2 (önerilen) veya backend içindeki `uploads/` klasörü
-- Database içinde: sadece `image_url` ve diğer metadata alanları
-- Kimlik doğrulama: JWT tabanlı giriş sistemi
-
-## Veri Modeli
-
-Kullanıcı:
+**Kullanıcı (User)**
 
 ```json
 {
   "id": "uuid",
   "name": "string",
   "email": "string",
-  "avatar_url": "string",
-  "bio": "string"
+  "avatar_url": "string"
 }
 ```
 
-Kıyafet:
+**Kıyafet (Clothing)**
 
 ```json
 {
@@ -91,7 +45,7 @@ Kıyafet:
 }
 ```
 
-Kombin:
+**Kombin (Outfit)**
 
 ```json
 {
@@ -102,7 +56,17 @@ Kombin:
 }
 ```
 
-## Backend Kurulumu
+## 🚀 Kurulum Rehberi
+
+### Ön Koşullar
+
+- Node.js 16+
+- PostgreSQL 12+
+- npm veya yarn
+- Expo CLI
+
+### 1. Backend Kurulumu
+Terminali açın ve backend klasörüne gidin:
 
 ```bash
 cd backend
@@ -110,51 +74,80 @@ npm install
 cp .env.example .env
 ```
 
-`schema.sql` dosyasini PostgreSQL'de calistir ve tabloları olustur.
+**Veritabanı Ayarları:**
 
-`.env` dosyasina en az su alanları ekle:
-
-```bash
-PORT=3001
-DATABASE_URL=postgresql://postgres:password@localhost:5432/DgtalWardrope
-JWT_SECRET=change-me
-REMOVE_BG_API_KEY=your-removebg-key
-AWS_S3_BUCKET=your-r2-bucket
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
-AWS_REGION=auto
-S3_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
-```
-
-Ardindan backend'i baslat:
+PostgreSQL'de veritabanını oluşturun ve şemayı çalıştırın:
 
 ```bash
-npm run dev
+createdb digital_wardrobe
+psql digital_wardrobe < schema.sql
 ```
 
-Mobil uygulamada backend adresini ayarlamak icin Expo ortam degiskeni kullan:
+**Sunucuyu Başlatma:**
 
 ```bash
-EXPO_PUBLIC_API_URL=http://<LOCAL_IP>:3001
+npm run dev    # Geliştirme ortamı için
+npm start      # Canlı ortam (Prod) için
 ```
 
-Not: Fiziksel cihaz kullanıyorsan `localhost` yerine bilgisayarının IP adresini yazman gerekir.
+### 2. Frontend (Mobil) Kurulumu
+Ana proje dizininde yeni bir terminal açın:
 
-## Kullanilan Teknolojiler
+```bash
+npm install
+cp .env.example .env
+```
 
-- React Native
-- Expo
-- React Navigation (Bottom Tabs)
-- Express
-- PostgreSQL
-- JWT
-- Multer
-- Expo Image Picker
-- Cloudflare R2 / S3 uyumlu object storage
+**Uygulamayı Başlatma:**
 
-## Notlar
+```bash
+npm start
+```
 
-- Varsayilan kullanici kimligi artik local demo yerine JWT tabanli olacak.
-- Görseller veritabanında tutulmaz; dosya olarak R2 veya backend'de saklanır, database'de sadece URL saklanır.
+Açılan menüden `a` tuşu ile Android, `i` tuşu ile iOS simülatöründe başlatabilirsiniz.
 
-1. Hafta videosu: 
+## ⚙️ Ortam Değişkenleri (.env)
+
+### Frontend (`/.env`)
+
+| Değişken | Örnek Değer | Açıklama |
+|---|---|---|
+| `EXPO_PUBLIC_API_URL` | `http://localhost:3001` | Backend temel adresi (Cihaz testleri için lokal IP girin) |
+| `EXPO_PUBLIC_BG_API_URL` | `http://localhost:3001` | Arka plan silme API adresi |
+
+### Backend (`/backend/.env`)
+
+| Değişken | Örnek Değer | Durum |
+|---|---|---|
+| `DATABASE_URL` | `postgresql://user:pass@localhost/dbname` | Zorunlu |
+| `JWT_SECRET` | `rastgele-32-karakterli-sifre` | Zorunlu |
+| `PORT` | `3001` | İsteğe Bağlı |
+| `REMOVE_BG_API_KEY` | `api-anahtariniz` | İsteğe Bağlı |
+| `AWS_S3_BUCKET` | `sizin-bucket-adiniz` | İsteğe Bağlı (S3 için) |
+
+*(Not: S3 değişkenlerini boş bırakırsanız sistem fotoğrafları otomatik olarak lokal `/uploads` klasörüne kaydeder).*
+
+## 📚 API Dokümantasyonu
+
+### Kimlik Doğrulama (Auth)
+
+- `POST /api/auth/register` - Yeni hesap oluşturma
+- `POST /api/auth/login` - Giriş yapma ve JWT token alma
+
+### Kıyafetler (Clothes)
+
+- `GET /api/clothes` - Kullanıcının kıyafetlerini listeleme (Auth gerekli)
+- `POST /api/clothes` - Kıyafet ekleme (Auth ve multipart görsel gerekli)
+- `DELETE /api/clothes/:id` - Kıyafet silme (Auth gerekli)
+
+### Kombinler (Outfits)
+
+- `GET /api/outfits` - Kullanıcının kombinlerini listeleme (Auth gerekli)
+- `POST /api/outfits` - Kombin oluşturma (Auth gerekli)
+- `DELETE /api/outfits/:id` - Kombin silme (Auth gerekli)
+
+## 🛡️ Güvenlik ve Sorun Giderme
+
+- **Güvenlik Uyarısı:** `.env` dosyalarınızı asla GitHub'a yüklemeyin (`.gitignore` içinde tutun). Canlı ortamda `JWT_SECRET` için güçlü bir anahtar kullanın.
+- **Bağlantı Hatası Alıyorsanız:** Mobil uygulamada `EXPO_PUBLIC_API_URL` kısmına `localhost` yerine bilgisayarınızın yerel IP adresini (örn: `192.168.1.x`) yazın.
+- **Görseller Yüklenmiyorsa:** S3/R2 kullanmıyorsanız backend tarafındaki `.env` dosyasında S3 ile ilgili satırları tamamen temizleyin.
