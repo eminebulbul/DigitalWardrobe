@@ -2,23 +2,34 @@ import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { TouchableOpacity, Text, ActivityIndicator, View } from "react-native";
-import AddClothingScreen from "../screens/AddClothingScreen";
+
+// Screens
 import CreateOutfitScreen from "../screens/CreateOutfitScreen";
-import CollectionScreen from "../screens/CollectionScreen";
+import AddClothingScreen from "../screens/AddClothingScreen";
 import DiscoverScreen from "../screens/DiscoverScreen";
-import CategoryGalleryScreen from "../screens/CategoryGalleryScreen";
+import CollectionScreen from "../screens/CollectionScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import OtherUserProfileScreen from "../screens/OtherUserProfileScreen";
 import ClothDetailScreen from "../screens/ClothDetailScreen";
 import OutfitDetailScreen from "../screens/OutfitDetailScreen";
+
+// Components
 import FloatingTabBar from "../components/FloatingTabBar";
 import { useAuth } from "../context/AuthContext";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+/**
+ * MAIN TABS - 5 sekmeli bottom navigation (soldan sağa):
+ * 1. Ana Sayfa (Shuffle/Kombin Oluştur)
+ * 2. Kıyafet Ekle
+ * 3. Keşfet (Social Feed - is_shared kombinleri)
+ * 4. Dolap (Wardrobe - Kıyafetler/Kombinlerim/Kaydedilenler)
+ * 5. Profil
+ */
 function AppTabs() {
   return (
     <Tab.Navigator
@@ -37,10 +48,6 @@ function AppTabs() {
           return (
             <TouchableOpacity
               onPress={() => {
-                if (route.name === "Kategori Galerisi") {
-                  navigation.navigate("Koleksiyon");
-                  return;
-                }
                 if (navigation.canGoBack()) {
                   navigation.goBack();
                   return;
@@ -55,27 +62,68 @@ function AppTabs() {
         },
       })}
     >
-      <Tab.Screen name="Ana Sayfa" component={CreateOutfitScreen} />
-      <Tab.Screen name="Kıyafet Ekle" component={AddClothingScreen} />
-      <Tab.Screen name="Keşfet" component={DiscoverScreen} />
-      <Tab.Screen name="Koleksiyon" component={CollectionScreen} />
-      <Tab.Screen name="Profil" component={ProfileScreen} />
+      {/* 1. Ana Sayfa - Shuffle/Kombin Oluştur */}
       <Tab.Screen
-        name="Kategori Galerisi"
-        component={CategoryGalleryScreen}
+        name="Ana Sayfa"
+        component={CreateOutfitScreen}
         options={{
-          tabBarButton: () => null,
-          tabBarStyle: { display: "none" },
-          headerTitle: "Kategori Galerisi",
+          tabBarLabel: "Ana Sayfa",
+          headerTitle: "Kombin Shuffle",
+        }}
+      />
+
+      {/* 2. Kıyafet Ekle */}
+      <Tab.Screen
+        name="Kıyafet Ekle"
+        component={AddClothingScreen}
+        options={{
+          tabBarLabel: "Kıyafet Ekle",
+          headerTitle: "Yeni Kıyafet Ekle",
+        }}
+      />
+
+      {/* 3. Keşfet (Discover - Sosyal Feed) */}
+      <Tab.Screen
+        name="Keşfet"
+        component={DiscoverScreen}
+        options={{
+          tabBarLabel: "Keşfet",
+          headerTitle: "Keşfet",
+        }}
+      />
+
+      {/* 4. Dolap (Wardrobe) - İçinde 3 Top Tab sekme olacak */}
+      <Tab.Screen
+        name="Dolap"
+        component={CollectionScreen}
+        options={{
+          tabBarLabel: "Dolap",
+          headerTitle: "Dolap",
+        }}
+      />
+
+      {/* 5. Profil */}
+      <Tab.Screen
+        name="Profil"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: "Profil",
+          headerTitle: "Profil",
         }}
       />
     </Tab.Navigator>
   );
 }
 
+/**
+ * AUTHENTICATED USER STACK
+ * - MainTabs (5 bottom tabs)
+ * - Modal Screens (OtherUserProfile, OutfitDetail, ClothDetail)
+ */
 function AppStack() {
   return (
     <Stack.Navigator>
+      {/* Main Tab Navigator */}
       <Stack.Group>
         <Stack.Screen
           name="MainTabs"
@@ -84,7 +132,7 @@ function AppStack() {
         />
       </Stack.Group>
 
-      {/* Modal screens for detail views */}
+      {/* Modal Screens - Başkasının profili, Kombin detayı, Kıyafet detayı */}
       <Stack.Group
         screenOptions={({ navigation }) => ({
           presentation: "card",
@@ -103,26 +151,34 @@ function AppStack() {
           ),
         })}
       >
+        {/* Başka bir kullanıcının profilini görmek için */}
         <Stack.Screen
           name="OtherUserProfile"
           component={OtherUserProfileScreen}
           options={{ title: "Profil" }}
         />
-        <Stack.Screen
-          name="ClothDetail"
-          component={ClothDetailScreen}
-          options={{ title: "Kıyafet Detayı" }}
-        />
+
+        {/* Kombin detay sayfası (Keşfet'ten tıklandığında) */}
         <Stack.Screen
           name="OutfitDetail"
           component={OutfitDetailScreen}
           options={{ title: "Kombin Detayı" }}
+        />
+
+        {/* Kıyafet detay sayfası */}
+        <Stack.Screen
+          name="ClothDetail"
+          component={ClothDetailScreen}
+          options={{ title: "Kıyafet Detayı" }}
         />
       </Stack.Group>
     </Stack.Navigator>
   );
 }
 
+/**
+ * AUTH STACK - Login ve Register ekranları
+ */
 function AuthStack() {
   return (
     <Stack.Navigator
@@ -137,6 +193,9 @@ function AuthStack() {
   );
 }
 
+/**
+ * ROOT NAVIGATOR - Auth durumuna göre AppStack veya AuthStack göster
+ */
 export default function AppNavigator() {
   const { isSignedIn, loading } = useAuth();
 

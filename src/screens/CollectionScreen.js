@@ -16,33 +16,22 @@ import {
   getClothes,
   getOutfits,
   removeOutfit,
-  getSavedOutfits,
-  removeSavedOutfit,
+  getFavoriteOutfits,
+  getFavoriteClothes,
+  toggleFavoriteOutfit,
+  toggleOutfitVisibility,
   updateClothingVisibility,
 } from "../services/storage";
+import theme from "../constants/theme";
+import OutfitCard from "../components/OutfitCard";
 
 export default function CollectionScreen({ navigation }) {
   const [clothes, setClothes] = useState([]);
   const [outfits, setOutfits] = useState([]);
   const [savedOutfits, setSavedOutfits] = useState([]);
+  const [favoriteClothes, setFavoriteClothes] = useState([]);
   const [activeView, setActiveView] = useState("outfits");
   const [selectedCategory, setSelectedCategory] = useState("Tümü");
-
-  function formatOutfitDate(isoDate) {
-    if (!isoDate) return null;
-    const date = new Date(isoDate);
-    if (Number.isNaN(date.getTime())) return null;
-    return date.toLocaleDateString("tr-TR");
-  }
-
-  const clothesMap = useMemo(
-    () =>
-      clothes.reduce((acc, item) => {
-        acc[item.id] = item;
-        return acc;
-      }, {}),
-    [clothes]
-  );
 
   const categoryOptions = useMemo(
     () => {
@@ -77,15 +66,17 @@ export default function CollectionScreen({ navigation }) {
 
   const loadData = useCallback(async () => {
     try {
-      const [savedClothes, savedOutfits, mySavedOutfits] = await Promise.all([
+      const [savedClothes, savedOutfits, mySavedOutfits, myFavoriteClothes] = await Promise.all([
         getClothes(),
         getOutfits(),
-        getSavedOutfits().catch(() => []),
+        getFavoriteOutfits().catch(() => []),
+        getFavoriteClothes().catch(() => []),
       ]);
       console.log("CollectionScreen.loadData -> clothes:", savedClothes.length, "outfits:", savedOutfits.length);
       setClothes(savedClothes);
       setOutfits(savedOutfits.slice().reverse());
       setSavedOutfits(mySavedOutfits.slice().reverse());
+      setFavoriteClothes(myFavoriteClothes.slice().reverse());
     } catch (error) {
       console.error("CollectionScreen.loadData ERROR:", error);
     }
@@ -120,6 +111,28 @@ export default function CollectionScreen({ navigation }) {
         },
       },
     ]);
+  }
+
+  async function handleToggleOutfitVisibility(outfit) {
+    const previousVisibility = outfit.visibility;
+    const nextVisibility = previousVisibility === "public" ? "private" : "public";
+
+    setOutfits((prev) =>
+      prev.map((item) =>
+        item.id === outfit.id ? { ...item, visibility: nextVisibility } : item
+      )
+    );
+
+    try {
+      await toggleOutfitVisibility(outfit.id, previousVisibility);
+    } catch (error) {
+      setOutfits((prev) =>
+        prev.map((item) =>
+          item.id === outfit.id ? { ...item, visibility: previousVisibility } : item
+        )
+      );
+      Alert.alert("Hata", error.message || "Gorunurluk guncellenemedi");
+    }
   }
 
   return (
@@ -168,7 +181,7 @@ export default function CollectionScreen({ navigation }) {
                 activeView === "saved" && styles.segmentTextActive,
               ]}
             >
-              Kaydedilenler
+              Favoriler
             </Text>
           </TouchableOpacity>
 
@@ -254,53 +267,72 @@ export default function CollectionScreen({ navigation }) {
           </View>
         ) : activeView === "saved" ? (
           <View style={styles.panelCard}>
-            <Text style={styles.sectionTitle}>Kaydedilenler</Text>
+            <Text style={styles.sectionTitle}>Favori Kombinler</Text>
             {!savedOutfits.length ? (
-              <Text style={styles.emptyText}>Henüz kaydedilmiş kombin bulunmuyor.</Text>
+              <Text style={styles.emptyText}>Henüz favori kombin bulunmuyor.</Text>
             ) : (
               savedOutfits.map((outfit, index) => {
-                const pieces = outfit.clothes_ids
-                  .map((id) => clothesMap[id])
-                  .filter(Boolean);
-                const title = outfit.name?.trim() || `Kaydedilmiş Kombin #${savedOutfits.length - index}`;
-                const creatorText = `${outfit.creator_name} tarafından`;
-
                 return (
-                  <View key={outfit.id} style={styles.outfitCard}>
-                    <Text style={styles.outfitTitle}>{title}</Text>
-                    <Text style={styles.outfitMeta}>{creatorText}</Text>
-                    <View style={styles.piecesRow}>
-                      {pieces.map((piece) => (
-                        <View key={piece.id} style={styles.pieceCard}>
-                          <RemoteImage publicUri={piece.imageUri} clothId={piece.id} style={styles.image} />
-                          <Text style={styles.category}>{piece.category}</Text>
-                          {!!piece.description && (
-                            <Text style={styles.description}>{piece.description}</Text>
-                          )}
-                        </View>
-                      ))}
-                    </View>
-                    <TouchableOpacity
-                      style={[styles.deleteButton, styles.deleteButtonRed]}
-                      onPress={() => {
-                        Alert.alert("Kaydı Sil", "Bu kombin kaydınızdan kaldırılacak. Emin misin?", [
-                          { text: "Vazgeç", style: "cancel" },
-                          {
-                            text: "Sil",
-                            style: "destructive",
-                            onPress: async () => {
-                              await removeSavedOutfit(outfit.id);
-                              await loadData();
+                  <OutfitCard
+                    key={outfit.id}
+                    outfit={{
+                      name: outfit.name?.trim() || `Favori Kombin #${savedOutfits.length - index}`,
+                      createdAt: outfit.savedAt || outfit.createdAt,
+                      pieces: Array.isArray(outfit.clothes) ? outfit.clothes : [],
+                    }}
+                    creatorName={outfit.creatorName}
+                    onPress={() => navigation.navigate("OutfitDetail", { outfitId: outfit.id })}
+                    actionButton={
+                      <TouchableOpacity
+                        style={[styles.deleteButton, styles.deleteButtonRed]}
+                        onPress={() => {
+                          Alert.alert("Favoriden Kaldır", "Bu kombin favorilerinizden kaldırılacak. Emin misin?", [
+                            { text: "Vazgeç", style: "cancel" },
+                            {
+                              text: "Kaldır",
+                              style: "destructive",
+                              onPress: async () => {
+                                await toggleFavoriteOutfit(outfit.id);
+                                await loadData();
+                              },
                             },
-                          },
-                        ]);
-                      }}
-                    >
-                      <Text style={styles.deleteButtonText}>Kaydı Sil</Text>
-                    </TouchableOpacity>
-                  </View>
+                          ]);
+                        }}
+                      >
+                        <Text style={styles.deleteButtonText}>Favoriden Kaldır</Text>
+                      </TouchableOpacity>
+                    }
+                  />
                 );
               })
+            )}
+
+            <Text style={[styles.sectionTitle, { marginTop: theme.spacing.lg }]}>Favori Kıyafetler</Text>
+            {!favoriteClothes.length ? (
+              <Text style={styles.emptyText}>Henüz favori kıyafet bulunmuyor.</Text>
+            ) : (
+              <View style={styles.clothesGrid}>
+                {favoriteClothes.map((item) => (
+                  <View key={item.id} style={styles.clothCard}>
+                    {console.log(
+                      "CollectionScreen favorite imageUri:",
+                      item.id,
+                      item.imageUri || item.image_url || item.cloth?.image_url
+                    )}
+                    <RemoteImage
+                      publicUri={item.imageUri || item.image_url || item.cloth?.image_url}
+                      clothId={item.id}
+                      style={styles.clothImage}
+                    />
+                    <Text style={styles.clothCategory}>{item.category}</Text>
+                    {!!item.description && (
+                      <Text numberOfLines={2} style={styles.clothDescription}>
+                        {item.description}
+                      </Text>
+                    )}
+                  </View>
+                ))}
+              </View>
             )}
           </View>
         ) : (
@@ -310,35 +342,48 @@ export default function CollectionScreen({ navigation }) {
               <Text style={styles.emptyText}>Henüz kayıtlı kombin bulunmuyor.</Text>
             ) : (
               outfits.map((outfit, index) => {
-                const pieces = outfit.clothesIds
-                  .map((id) => clothesMap[id])
-                  .filter(Boolean);
-                const title = outfit.name?.trim() || `Kayıtlı Kombin #${outfits.length - index}`;
-                const dateText = formatOutfitDate(outfit.createdAt);
-                const metaText = `${pieces.length} parça${dateText ? ` • ${dateText}` : ""}`;
-
                 return (
-                  <View key={outfit.id} style={styles.outfitCard}>
-                    <Text style={styles.outfitTitle}>{title}</Text>
-                    <Text style={styles.outfitMeta}>{metaText}</Text>
-                    <View style={styles.piecesRow}>
-                      {pieces.map((piece) => (
-                        <View key={piece.id} style={styles.pieceCard}>
-                          <RemoteImage publicUri={piece.imageUri} clothId={piece.id} style={styles.image} />
-                          <Text style={styles.category}>{piece.category}</Text>
-                          {!!piece.description && (
-                            <Text style={styles.description}>{piece.description}</Text>
-                          )}
-                        </View>
-                      ))}
-                    </View>
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => handleDeleteOutfit(outfit)}
-                    >
-                      <Text style={styles.deleteButtonText}>Kombini Sil</Text>
-                    </TouchableOpacity>
-                  </View>
+                  <OutfitCard
+                    key={outfit.id}
+                    outfit={{
+                      name: outfit.name?.trim() || `Kayıtlı Kombin #${outfits.length - index}`,
+                      createdAt: outfit.createdAt,
+                      pieces: Array.isArray(outfit.clothes) ? outfit.clothes : [],
+                    }}
+                    creatorName={null}
+                    onPress={() =>
+                      navigation.navigate("OutfitDetail", {
+                        outfitId: outfit.id,
+                      })
+                    }
+                    actionButton={
+                      <View style={styles.outfitActionsRow}>
+                        <TouchableOpacity
+                          style={[styles.deleteButton, styles.outfitActionButton]}
+                          onPress={() => handleDeleteOutfit(outfit)}
+                        >
+                          <Text style={styles.deleteButtonText}>Sil</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.outfitVisibilityButton,
+                            styles.outfitActionButton,
+                            outfit.visibility === "public" && styles.outfitVisibilityButtonActive,
+                          ]}
+                          onPress={() => handleToggleOutfitVisibility(outfit)}
+                        >
+                          <Text
+                            style={[
+                              styles.outfitVisibilityButtonText,
+                              outfit.visibility === "public" && styles.outfitVisibilityButtonTextActive,
+                            ]}
+                          >
+                            {outfit.visibility === "public" ? "Gizle" : "Paylaş"}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    }
+                  />
                 );
               })
             )}
@@ -352,43 +397,39 @@ export default function CollectionScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#EAF7FF",
+    backgroundColor: theme.colors.background,
   },
   content: {
-    padding: 16,
+    padding: theme.spacing.md,
     paddingBottom: 110,
   },
   heroCard: {
-    borderRadius: 18,
-    backgroundColor: "#F89DAC",
-    paddingHorizontal: 16,
-    paddingVertical: 18,
-    marginBottom: 14,
-    shadowColor: "#F89DAC",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    borderRadius: theme.border.radius.lg,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    ...theme.shadows.md,
   },
   kicker: {
-    color: "#FFF4F7",
-    fontWeight: "800",
-    fontSize: 11,
-    letterSpacing: 1.2,
-    marginBottom: 4,
+    color: theme.colors.white,
+    fontWeight: theme.typography.weights.bold,
+    fontSize: theme.typography.sizes.xs,
+    letterSpacing: 1,
+    marginBottom: theme.spacing.xs,
   },
   heroTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#fff",
-    marginBottom: 6,
+    fontSize: theme.typography.sizes.xxxl,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.white,
+    marginBottom: theme.spacing.sm,
   },
   heroSubtitle: {
     marginTop: 0,
-    marginBottom: 14,
-    color: "#FFF4F7",
-    fontWeight: "500",
-    fontSize: 13,
+    marginBottom: theme.spacing.md,
+    color: "rgba(255, 255, 255, 0.85)",
+    fontWeight: theme.typography.weights.semibold,
+    fontSize: theme.typography.sizes.sm,
   },
   statsRow: {
     flexDirection: "row",
@@ -400,225 +441,242 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: "#fff",
-    marginBottom: 2,
+    fontSize: theme.typography.sizes.xxl,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.white,
+    marginBottom: theme.spacing.xs,
   },
   statLabel: {
-    color: "#FFF4F7",
-    fontWeight: "600",
-    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.8)",
+    fontWeight: theme.typography.weights.semibold,
+    fontSize: theme.typography.sizes.xs,
   },
   statDivider: {
     width: 1,
     height: 40,
     backgroundColor: "rgba(255, 255, 255, 0.3)",
-    marginHorizontal: 16,
+    marginHorizontal: theme.spacing.lg,
   },
   panelCard: {
-    borderRadius: 16,
+    borderRadius: theme.border.radius.lg,
     borderWidth: 1,
-    borderColor: "#CFE8F7",
-    backgroundColor: "#fff",
-    padding: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    ...theme.shadows.sm,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#3f3932",
-    marginBottom: 10,
+    fontSize: theme.typography.sizes.base,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.md,
   },
   segmentWrap: {
     flexDirection: "row",
-    borderRadius: 14,
+    borderRadius: theme.border.radius.lg,
     borderWidth: 1,
-    borderColor: "#CFE8F7",
-    backgroundColor: "#F5FBFF",
-    padding: 4,
-    marginBottom: 12,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.xs,
+    marginBottom: theme.spacing.md,
   },
   segmentButton: {
     flex: 1,
-    borderRadius: 10,
-    paddingVertical: 10,
+    borderRadius: theme.border.radius.md,
+    paddingVertical: theme.spacing.md,
     alignItems: "center",
   },
   segmentButtonActive: {
-    backgroundColor: "#F89DAC",
-    shadowColor: "#F89DAC",
-    shadowOpacity: 0.14,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 2,
+    backgroundColor: theme.colors.primary,
+    ...theme.shadows.sm,
   },
   segmentText: {
-    color: "#6a6157",
-    fontWeight: "700",
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.weights.bold,
   },
   segmentTextActive: {
-    color: "#fff",
+    color: theme.colors.white,
   },
   filterRow: {
-    gap: 8,
-    paddingBottom: 6,
-    marginBottom: 8,
+    gap: theme.spacing.sm,
+    paddingBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
   },
   filterChip: {
-    borderRadius: 18,
+    borderRadius: theme.border.radius.round,
     borderWidth: 1,
-    borderColor: "#CFE8F7",
-    backgroundColor: "#fff",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.white,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
   },
   filterChipActive: {
-    borderColor: "#F89DAC",
-    backgroundColor: "#FFF4F7",
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary,
   },
   filterChipText: {
-    color: "#5e564c",
-    fontWeight: "700",
-    fontSize: 12,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.weights.bold,
+    fontSize: theme.typography.sizes.xs,
   },
   filterChipTextActive: {
-    color: "#F89DAC",
+    color: theme.colors.white,
   },
   clothesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
-    marginTop: 2,
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.xs,
   },
   clothCard: {
     width: "48%",
-    borderRadius: 14,
+    borderRadius: theme.border.radius.md,
     borderWidth: 1,
-    borderColor: "#CFE8F7",
-    backgroundColor: "#fff",
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     overflow: "hidden",
-    marginBottom: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    marginBottom: theme.spacing.xs,
+    ...theme.shadows.sm,
   },
   clothImage: {
     width: "100%",
     height: 160,
-    backgroundColor: "#EAF7FF",
+    backgroundColor: theme.colors.background,
   },
   clothCategory: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#585148",
-    paddingHorizontal: 8,
-    paddingTop: 8,
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.primary,
+    paddingHorizontal: theme.spacing.sm,
+    paddingTop: theme.spacing.sm,
   },
   clothDescription: {
-    fontSize: 11,
-    color: "#6a6157",
-    paddingHorizontal: 8,
-    paddingBottom: 8,
-    paddingTop: 3,
+    fontSize: theme.typography.sizes.xs,
+    color: theme.colors.text.secondary,
+    paddingHorizontal: theme.spacing.sm,
+    paddingBottom: theme.spacing.sm,
+    paddingTop: theme.spacing.xs,
   },
   emptyText: {
-    color: "#6d655c",
-    paddingVertical: 8,
+    color: theme.colors.text.secondary,
+    paddingVertical: theme.spacing.md,
   },
   outfitCard: {
-    borderRadius: 14,
+    borderRadius: theme.border.radius.md,
     borderWidth: 1,
-    borderColor: "#CFE8F7",
-    backgroundColor: "#F5FBFF",
-    padding: 12,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    ...theme.shadows.sm,
   },
   outfitTitle: {
-    fontWeight: "800",
-    color: "#413b34",
-    marginBottom: 4,
-    fontSize: 14,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.xs,
+    fontSize: theme.typography.sizes.base,
   },
   outfitMeta: {
-    color: "#7a7267",
-    fontSize: 11,
-    fontWeight: "600",
-    marginBottom: 10,
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.semibold,
+    marginBottom: theme.spacing.md,
   },
   piecesRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: theme.spacing.md,
   },
   pieceCard: {
     width: "31%",
-    borderRadius: 10,
-    backgroundColor: "#F5FBFF",
+    borderRadius: theme.border.radius.md,
+    backgroundColor: theme.colors.background,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#CFE8F7",
+    borderColor: theme.colors.border,
   },
   image: {
     width: "100%",
     height: 84,
-    backgroundColor: "#EAF7FF",
+    backgroundColor: theme.colors.background,
   },
   category: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#585148",
-    paddingHorizontal: 6,
-    paddingVertical: 6,
-    backgroundColor: "#F5FBFF",
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.primary,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.background,
   },
   description: {
-    fontSize: 10,
-    color: "#5f574d",
-    paddingHorizontal: 6,
-    paddingBottom: 6,
+    fontSize: theme.typography.sizes.xs,
+    color: theme.colors.text.secondary,
+    paddingHorizontal: theme.spacing.sm,
+    paddingBottom: theme.spacing.sm,
   },
   shareButton: {
-    marginTop: 8,
-    borderRadius: 8,
-    backgroundColor: "#F5FBFF",
+    marginTop: theme.spacing.md,
+    borderRadius: theme.border.radius.md,
+    backgroundColor: theme.colors.background,
     borderWidth: 1,
-    borderColor: "#CFE8F7",
+    borderColor: theme.colors.border,
     alignItems: "center",
-    paddingVertical: 6,
+    paddingVertical: theme.spacing.sm,
   },
   shareButtonActive: {
-    backgroundColor: "#E8F5FF",
-    borderColor: "#1E90FF",
+    backgroundColor: theme.colors.secondary,
+    borderColor: theme.colors.secondary,
   },
   shareButtonText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: "#3f3a34",
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.semibold,
+    color: theme.colors.text.primary,
   },
   deleteButton: {
-    marginTop: 8,
-    borderRadius: 10,
+    marginTop: theme.spacing.md,
+    borderRadius: theme.border.radius.md,
     borderWidth: 1,
-    borderColor: "#efd5d5",
-    backgroundColor: "#fff5f5",
+    borderColor: theme.colors.error,
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
     alignItems: "center",
-    paddingVertical: 8,
+    paddingVertical: theme.spacing.md,
+  },
+  deleteButtonRed: {
+    borderColor: theme.colors.error,
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
   },
   deleteButtonText: {
-    color: "#b34747",
-    fontWeight: "800",
-    fontSize: 12,
+    color: theme.colors.error,
+    fontWeight: theme.typography.weights.bold,
+    fontSize: theme.typography.sizes.xs,
+  },
+  outfitActionsRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  outfitActionButton: {
+    flex: 1,
+  },
+  outfitVisibilityButton: {
+    marginTop: theme.spacing.md,
+    borderRadius: theme.border.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.background,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: theme.spacing.md,
+  },
+  outfitVisibilityButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  outfitVisibilityButtonText: {
+    color: theme.colors.primary,
+    fontWeight: theme.typography.weights.bold,
+    fontSize: theme.typography.sizes.xs,
+  },
+  outfitVisibilityButtonTextActive: {
+    color: theme.colors.white,
   },
 });

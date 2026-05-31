@@ -5,52 +5,40 @@ import { resolveApiBaseUrl } from "../services/api";
 
 const API_BASE = resolveApiBaseUrl();
 
-export default function RemoteImage({ publicUri, clothId, style, fallback }) {
+export default function RemoteImage({ publicUri, clothId, style, fallback, isPublic = false }) {
   const { token } = useAuth();
   const [src, setSrc] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [usedFallbackProxy, setUsedFallbackProxy] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    const controller = new AbortController();
-    async function probe() {
-      try {
-        if (!publicUri) {
-          setSrc(null);
-          setLoading(false);
-          return;
-        }
-
-        // If the provided URI already points to our proxy, use it directly
-        if (publicUri.includes("/api/clothes/") && publicUri.includes("/image")) {
-          if (mounted) setSrc(publicUri);
-          return;
-        }
-
-        // Try fetching the public URI (small HEAD-like request)
-        const res = await fetch(publicUri, { method: "GET", signal: controller.signal });
-        if (res.ok) {
-          if (mounted) setSrc(publicUri);
-        } else {
-          // fallback to proxy with token if available
-          const proxy = `${API_BASE}/api/clothes/${clothId}/image${token ? `?token=${encodeURIComponent(token)}` : ""}`;
-          if (mounted) setSrc(proxy);
-        }
-      } catch (error) {
-        const proxy = `${API_BASE}/api/clothes/${clothId}/image${token ? `?token=${encodeURIComponent(token)}` : ""}`;
-        if (mounted) setSrc(proxy);
-      } finally {
-        if (mounted) setLoading(false);
-      }
+    if (!publicUri) {
+      setSrc(null);
+      setLoading(false);
+      return () => {
+        mounted = false;
+      };
     }
 
-    probe();
+    // Absolute URLs can be loaded directly. Relative/private URLs can still
+    // use the authenticated proxy endpoint.
+    if (publicUri.startsWith("http://") || publicUri.startsWith("https://")) {
+      setSrc(publicUri);
+    } else if (publicUri.includes("/api/clothes/") && publicUri.includes("/image")) {
+      setSrc(publicUri);
+    } else {
+      const proxy = `${API_BASE}/api/clothes/${clothId}/image${!isPublic && token ? `?token=${encodeURIComponent(token)}` : ""}`;
+      setSrc(proxy);
+    }
+
+    setUsedFallbackProxy(false);
+    setLoading(false);
 
     return () => {
       mounted = false;
-      controller.abort();
     };
-  }, [publicUri, clothId, token]);
+  }, [publicUri, clothId, token, isPublic]);
 
   if (loading) {
     return (
@@ -68,7 +56,21 @@ export default function RemoteImage({ publicUri, clothId, style, fallback }) {
     );
   }
 
-  return <Image source={{ uri: src }} style={style} />;
+  return (
+    <Image
+      source={{ uri: src }}
+      style={style}
+      onError={() => {
+        if (usedFallbackProxy) {
+          return;
+        }
+
+        const proxy = `${API_BASE}/api/clothes/${clothId}/image${!isPublic && token ? `?token=${encodeURIComponent(token)}` : ""}`;
+        setUsedFallbackProxy(true);
+        setSrc(proxy);
+      }}
+    />
+  );
 }
 
 const styles = StyleSheet.create({

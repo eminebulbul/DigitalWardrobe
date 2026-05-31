@@ -49,7 +49,17 @@ function mapClothingImageUrl(clothing, token = null) {
       return clothing.image_url;
     }
 
+    // For R2 URLs: if clothing is public, don't send token (works for all accounts)
+    // If private, send token for authenticated access
+    const isPublic = clothing.visibility === "public";
     const baseProxyUrl = `${API_BASE}/api/clothes/${clothing.id}/image`;
+    
+    // Public items: no token needed, accessible to everyone
+    if (isPublic) {
+      return baseProxyUrl;
+    }
+    
+    // Private items: send token for authenticated access
     if (!token) {
       return baseProxyUrl;
     }
@@ -117,6 +127,7 @@ export async function addClothing(item) {
     });
     if (item.category) form.append("category", item.category);
     if (item.description) form.append("description", item.description);
+    if (typeof item.is_public !== "undefined") form.append("is_public", item.is_public ? "true" : "false");
 
     const res = await fetch(`${API_BASE}/api/clothes`, {
       method: "POST",
@@ -195,6 +206,18 @@ export async function getOutfits(userId = CURRENT_USER_ID) {
       clothesIds: o.clothes_ids,
       visibility: o.visibility,
       createdAt: o.created_at,
+      clothes: Array.isArray(o.clothes)
+        ? o.clothes.map((cloth) => ({
+            id: cloth.id,
+            userId: cloth.user_id,
+            imageUri: mapClothingImageUrl(cloth, token),
+            image_url: cloth.image_url,
+            category: cloth.category,
+            description: cloth.description,
+            visibility: cloth.visibility,
+            createdAt: cloth.created_at,
+          }))
+        : [],
     }));
   }
 
@@ -316,6 +339,11 @@ export async function updateOutfitVisibility(outfitId, visibility) {
   return data.outfit;
 }
 
+export async function toggleOutfitVisibility(outfitId, currentVisibility) {
+  const nextVisibility = currentVisibility === "public" ? "private" : "public";
+  return updateOutfitVisibility(outfitId, nextVisibility);
+}
+
 export async function getPublicOutfits(userId) {
   const token = await getAuthToken();
 
@@ -329,6 +357,46 @@ export async function getPublicOutfits(userId) {
   }
 
   return data.outfits;
+}
+
+export async function getOutfitById(outfitId) {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_BASE}/api/outfits/${outfitId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to load outfit");
+  }
+
+  const outfit = data.outfit;
+  return {
+    id: outfit.id,
+    userId: outfit.user_id,
+    name: outfit.name,
+    clothesIds: outfit.clothes_ids,
+    visibility: outfit.visibility,
+    createdAt: outfit.created_at,
+    created_at: outfit.created_at,
+    creatorName: outfit.creator_name,
+    creatorAvatar: outfit.creator_avatar,
+    clothes: Array.isArray(outfit.clothes)
+      ? outfit.clothes.map((cloth) => ({
+          id: cloth.id,
+          userId: cloth.user_id,
+          imageUri: mapClothingImageUrl(cloth, token),
+          image_url: cloth.image_url,
+          category: cloth.category,
+          description: cloth.description,
+          visibility: cloth.visibility,
+          createdAt: cloth.created_at,
+          created_at: cloth.created_at,
+        }))
+      : [],
+  };
 }
 
 export async function getDiscoverOutfits(page = 1, sort = "recent") {
@@ -347,7 +415,31 @@ export async function getDiscoverOutfits(page = 1, sort = "recent") {
   }
 
   return {
-    outfits: data.outfits,
+    outfits: data.outfits.map((o) => ({
+      id: o.id,
+      userId: o.user_id,
+      name: o.name,
+      clothesIds: o.clothes_ids,
+      createdAt: o.created_at,
+      created_at: o.created_at,
+      creatorName: o.creator_name,
+      creatorAvatar: o.creator_avatar,
+      saveCount: o.save_count,
+      visibility: o.visibility,
+      clothes: Array.isArray(o.clothes)
+        ? o.clothes.map((cloth) => ({
+            id: cloth.id,
+            userId: cloth.user_id,
+            imageUri: mapClothingImageUrl(cloth, token),
+            image_url: cloth.image_url,
+            category: cloth.category,
+            description: cloth.description,
+            visibility: cloth.visibility,
+            createdAt: cloth.created_at,
+            created_at: cloth.created_at,
+          }))
+        : [],
+    })),
     pagination: data.pagination,
   };
 }
@@ -377,6 +469,7 @@ export async function getDiscoverClothes(page = 1, sort = "recent") {
       creatorName: c.creator_name,
       creatorAvatar: c.creator_avatar,
       createdAt: c.created_at,
+      visibility: c.visibility,
     })),
     pagination: data.pagination,
   };
@@ -386,13 +479,11 @@ export async function saveOutfit(outfitId) {
   const token = await getAuthToken();
   if (!token) throw new Error("Not authenticated");
 
-  const res = await fetch(`${API_BASE}/api/saved-outfits`, {
+  const res = await fetch(`${API_BASE}/api/outfits/${outfitId}/save`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ outfit_id: outfitId }),
   });
 
   const data = await parseApiResponse(res);
@@ -401,6 +492,29 @@ export async function saveOutfit(outfitId) {
   }
 
   return data.saved_outfit;
+}
+
+export async function toggleFavoriteOutfit(outfitId) {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_BASE}/api/outfits/${outfitId}/save`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to toggle saved outfit");
+  }
+
+  return data;
+}
+
+export async function toggleSaveOutfit(outfitId) {
+  return toggleFavoriteOutfit(outfitId);
 }
 
 export async function getSavedOutfits() {
@@ -416,7 +530,32 @@ export async function getSavedOutfits() {
     throw buildApiError(data, "Failed to load saved outfits");
   }
 
-  return data.saved_outfits;
+  return data.saved_outfits.map((outfit) => ({
+    id: outfit.id,
+    userId: outfit.user_id,
+    name: outfit.name,
+    clothesIds: outfit.clothes_ids,
+    visibility: outfit.visibility,
+    createdAt: outfit.created_at,
+    creatorName: outfit.creator_name,
+    creatorAvatar: outfit.creator_avatar,
+    savedAt: outfit.saved_at,
+    clothes: Array.isArray(outfit.clothes)
+      ? outfit.clothes.map((cloth) => ({
+          id: cloth.id,
+          userId: cloth.user_id,
+          imageUri: mapClothingImageUrl(cloth, token),
+          category: cloth.category,
+          description: cloth.description,
+          visibility: cloth.visibility,
+          createdAt: cloth.created_at,
+        }))
+      : [],
+  }));
+}
+
+export async function getFavoriteOutfits() {
+  return getSavedOutfits();
 }
 
 export async function removeSavedOutfit(outfitId) {
@@ -434,6 +573,50 @@ export async function removeSavedOutfit(outfitId) {
   }
 
   return true;
+}
+
+export async function toggleFavoriteCloth(clothId) {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_BASE}/api/clothes/${clothId}/favorite`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to toggle favorite cloth");
+  }
+
+  return data;
+}
+
+export async function getFavoriteClothes() {
+  const token = await getAuthToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const res = await fetch(`${API_BASE}/api/clothes/favorites`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  const data = await parseApiResponse(res);
+  if (!res.ok || !data?.ok) {
+    throw buildApiError(data, "Failed to load favorite clothes");
+  }
+
+  return data.clothes.map((cloth) => ({
+    id: cloth.id,
+    userId: cloth.user_id,
+    imageUri: mapClothingImageUrl(cloth, token),
+    category: cloth.category,
+    description: cloth.description,
+    visibility: cloth.visibility,
+    createdAt: cloth.created_at,
+    favoritedAt: cloth.favorited_at,
+  }));
 }
 
 export async function getUserProfile(userId) {

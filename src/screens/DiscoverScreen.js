@@ -10,8 +10,10 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { getDiscoverOutfits, getDiscoverClothes, saveOutfit, removeSavedOutfit } from "../services/storage";
+import { getDiscoverOutfits, getDiscoverClothes, toggleFavoriteOutfit, toggleFavoriteCloth } from "../services/storage";
 import RemoteImage from "../components/RemoteImage";
+import OutfitCard from "../components/OutfitCard";
+import theme from "../constants/theme";
 
 export default function DiscoverScreen({ navigation }) {
   const [allItems, setAllItems] = useState([]);
@@ -70,67 +72,82 @@ export default function DiscoverScreen({ navigation }) {
 
   async function handleSaveOutfit(outfitId) {
     try {
-      if (savedMap[outfitId]) {
-        await removeSavedOutfit(outfitId);
-        setSavedMap((prev) => {
-          const next = { ...prev };
-          delete next[outfitId];
-          return next;
-        });
-      } else {
-        await saveOutfit(outfitId);
-        setSavedMap((prev) => ({ ...prev, [outfitId]: true }));
-      }
+      const previousSaved = Boolean(savedMap[outfitId]);
+      setSavedMap((prev) => ({
+        ...prev,
+        [outfitId]: !previousSaved,
+      }));
+
+      await toggleFavoriteOutfit(outfitId);
+      setSavedMap((prev) => ({
+        ...prev,
+        [outfitId]: true,
+      }));
     } catch (error) {
+      setSavedMap((prev) => ({
+        ...prev,
+        [outfitId]: Boolean(savedMap[outfitId]),
+      }));
       alert("İşlem başarısız");
     }
   }
 
-  const renderOutfitCard = (item) => (
-    <TouchableOpacity
-      style={styles.cardContainer}
-      onPress={() =>
-        navigation.navigate("OutfitDetail", {
-          outfitId: item.id,
-          userId: item.user_id,
-        })
-      }
-      activeOpacity={0.8}
-    >
-      <View style={styles.card}>
-        <View style={styles.outfitBg}>
-          <Text style={styles.outfitEmoji}>✨</Text>
-        </View>
-        <View style={styles.overlay} />
-        <View style={styles.cardContent}>
-          <View style={styles.creatorRow}>
-            <View style={styles.avatarSmall}>
-              <Text style={styles.avatar}>👤</Text>
-            </View>
-            <View style={styles.textContent}>
-              <TouchableOpacity
-                onPress={() =>
-                  navigation.navigate("OtherUserProfile", { userId: item.user_id })
-                }
-              >
-                <Text style={styles.creatorName}>{item.creator_name}</Text>
-              </TouchableOpacity>
-              <Text style={styles.title} numberOfLines={1}>{item.name}</Text>
-            </View>
-          </View>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>💾 {item.save_count}</Text>
-          </View>
-        </View>
-        <TouchableOpacity
-          style={[styles.actionBtn, savedMap[item.id] && styles.actionBtnSaved]}
-          onPress={() => handleSaveOutfit(item.id)}
-        >
-          <Text style={styles.actionBtnText}>{savedMap[item.id] ? "✓" : "💾"}</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
+  async function handleSaveCloth(item) {
+    try {
+      const previousSaved = Boolean(savedMap[`cloth-${item.id}`]);
+      setSavedMap((prev) => ({
+        ...prev,
+        [`cloth-${item.id}`]: !previousSaved,
+      }));
+
+      const result = await toggleFavoriteCloth(item.id);
+      setSavedMap((prev) => {
+        const next = { ...prev };
+        if (result.favorite) {
+          next[`cloth-${item.id}`] = true;
+        } else {
+          delete next[`cloth-${item.id}`];
+        }
+        return next;
+      });
+    } catch (error) {
+      console.error("Save cloth failed:", error);
+      setSavedMap((prev) => ({
+        ...prev,
+        [`cloth-${item.id}`]: Boolean(savedMap[`cloth-${item.id}`]),
+      }));
+      alert(error.message || "İşlem başarısız oldu");
+    }
+  }
+
+  const renderOutfitCard = (item) => {
+    return (
+      <OutfitCard
+        outfit={{
+          name: item.name,
+          createdAt: item.createdAt,
+          pieces: Array.isArray(item.clothes) ? item.clothes : [],
+        }}
+        creatorName={item.creatorName || "Anonim"}
+        onPress={() =>
+          navigation.navigate("OutfitDetail", {
+            outfitId: item.id,
+          })
+        }
+        actionButton={
+          <TouchableOpacity
+            style={[styles.saveButton, savedMap[item.id] && styles.saveButtonActive]}
+            onPress={() => handleSaveOutfit(item.id)}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.saveButtonText, savedMap[item.id] && styles.saveButtonTextActive]}>
+              Favorile
+            </Text>
+          </TouchableOpacity>
+        }
+      />
+    );
+  };
 
   const renderClothCard = (item) => (
     <TouchableOpacity
@@ -139,6 +156,7 @@ export default function DiscoverScreen({ navigation }) {
         navigation.navigate("ClothDetail", {
           clothId: item.id,
           userId: item.userId,
+          hideStatus: true,
         })
       }
       activeOpacity={0.8}
@@ -148,6 +166,7 @@ export default function DiscoverScreen({ navigation }) {
           publicUri={item.imageUri}
           clothId={item.id}
           style={styles.clothImage}
+          isPublic={item.visibility === "public"}
         />
         <View style={styles.clothOverlay} />
         <View style={styles.clothInfo}>
@@ -159,6 +178,15 @@ export default function DiscoverScreen({ navigation }) {
             <Text style={styles.clothCreator} numberOfLines={1}>{item.creatorName}</Text>
           </TouchableOpacity>
           <Text style={styles.clothCategory}>{item.category}</Text>
+          <TouchableOpacity
+            style={[styles.saveButton, savedMap[`cloth-${item.id}`] && styles.saveButtonActive]}
+            onPress={() => handleSaveCloth(item)}
+            activeOpacity={0.85}
+          >
+            <Text style={[styles.saveButtonText, savedMap[`cloth-${item.id}`] && styles.saveButtonTextActive]}>
+              {savedMap[`cloth-${item.id}`] ? "Favorilendi" : "Favorile"}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
@@ -171,7 +199,7 @@ export default function DiscoverScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Keşfet</Text>
+        <Text style={styles.headerTitle}>🔍 Keşfet</Text>
         <Text style={styles.headerSubtitle}>Yeni Trendler</Text>
       </View>
 
@@ -184,7 +212,9 @@ export default function DiscoverScreen({ navigation }) {
             setPage(1);
           }}
         >
-          <Text style={styles.sortBtnText}>🕐 Yeni</Text>
+          <Text style={[styles.sortBtnText, sort === "recent" && styles.sortBtnTextActive]}>
+            🕐 Yeni
+          </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.sortBtn, sort === "trending" && styles.sortBtnActive]}
@@ -194,13 +224,15 @@ export default function DiscoverScreen({ navigation }) {
             setPage(1);
           }}
         >
-          <Text style={styles.sortBtnText}>🔥 Trend</Text>
+          <Text style={[styles.sortBtnText, sort === "trending" && styles.sortBtnTextActive]}>
+            🔥 Trend
+          </Text>
         </TouchableOpacity>
       </View>
 
       {loading && allItems.length === 0 ? (
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#FF6B9D" />
+          <ActivityIndicator size="large" color={theme.colors.primary} />
         </View>
       ) : (
         <FlatList
@@ -220,13 +252,13 @@ export default function DiscoverScreen({ navigation }) {
                 setRefreshing(true);
                 loadAllContent(1);
               }}
-              tintColor="#FF6B9D"
+              tintColor={theme.colors.primary}
             />
           }
           ListFooterComponent={
             loading && allItems.length > 0 ? (
               <View style={styles.footer}>
-                <ActivityIndicator size="small" color="#FF6B9D" />
+                <ActivityIndicator size="small" color={theme.colors.primary} />
               </View>
             ) : null
           }
@@ -249,177 +281,70 @@ export default function DiscoverScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: theme.colors.background,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    backgroundColor: "#fff",
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.lg,
+    backgroundColor: theme.colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: theme.colors.border,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "900",
-    color: "#000",
-    marginBottom: 4,
+    fontSize: theme.typography.sizes.xxxl,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.sm,
   },
   headerSubtitle: {
-    fontSize: 13,
-    color: "#999",
-    fontWeight: "600",
+    fontSize: theme.typography.sizes.sm,
+    color: theme.colors.text.tertiary,
+    fontWeight: theme.typography.weights.semibold,
   },
   sortBar: {
     flexDirection: "row",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: "#fff",
-    gap: 8,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    gap: theme.spacing.sm,
   },
   sortBtn: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: "#f5f5f5",
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.border.radius.round,
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
   },
   sortBtnActive: {
-    backgroundColor: "#FF6B9D",
+    backgroundColor: theme.colors.primary,
   },
   sortBtnText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#666",
+    fontSize: theme.typography.sizes.sm,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.secondary,
+  },
+  sortBtnTextActive: {
+    color: theme.colors.white,
   },
   listContent: {
-    paddingHorizontal: 8,
-    paddingVertical: 8,
-  },
-  cardContainer: {
-    marginBottom: 12,
-    marginHorizontal: 4,
-  },
-  card: {
-    borderRadius: 16,
-    overflow: "hidden",
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    minHeight: 200,
-  },
-  outfitBg: {
-    width: "100%",
-    height: 140,
-    backgroundColor: "#667eea",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  outfitEmoji: {
-    fontSize: 50,
-  },
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 140,
-    backgroundColor: "rgba(0, 0, 0, 0.1)",
-  },
-  cardContent: {
-    padding: 12,
-    paddingBottom: 14,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  creatorRow: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginRight: 8,
-  },
-  avatarSmall: {
-    width: 35,
-    height: 35,
-    borderRadius: 18,
-    backgroundColor: "#f0f0f0",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatar: {
-    fontSize: 16,
-  },
-  textContent: {
-    flex: 1,
-  },
-  creatorName: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#000",
-    marginBottom: 2,
-  },
-  title: {
-    fontSize: 11,
-    color: "#666",
-    fontWeight: "500",
-  },
-  badge: {
-    backgroundColor: "#FFE5ED",
-    borderRadius: 10,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#FF6B9D",
-  },
-  actionBtn: {
-    position: "absolute",
-    bottom: 14,
-    right: 14,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#FF6B9D",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#FF6B9D",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 5,
-  },
-  actionBtnSaved: {
-    backgroundColor: "#4CAF50",
-  },
-  actionBtnText: {
-    fontSize: 18,
-    color: "#fff",
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
   },
   clothContainer: {
     flex: 1,
-    marginBottom: 10,
-    marginHorizontal: 4,
+    marginBottom: theme.spacing.md,
+    marginHorizontal: theme.spacing.sm,
   },
   clothCard: {
-    borderRadius: 12,
+    borderRadius: theme.border.radius.md,
     overflow: "hidden",
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    backgroundColor: theme.colors.surface,
+    ...theme.shadows.sm,
   },
   clothImage: {
     width: "100%",
     height: 180,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: theme.colors.background,
   },
   clothOverlay: {
     position: "absolute",
@@ -434,20 +359,42 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
     backgroundColor: "rgba(255, 255, 255, 0.95)",
   },
   clothCreator: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#000",
-    marginBottom: 2,
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.xs,
   },
   clothCategory: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: "#FF6B9D",
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.semibold,
+    color: theme.colors.primary,
+  },
+  saveButton: {
+    marginTop: theme.spacing.xs,
+    alignSelf: "flex-start",
+    borderRadius: theme.border.radius.round,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+  },
+  saveButtonActive: {
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
+  },
+  saveButtonText: {
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.primary,
+  },
+  saveButtonTextActive: {
+    color: theme.colors.white,
   },
   center: {
     flex: 1,
@@ -455,7 +402,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   footer: {
-    paddingVertical: 20,
+    paddingVertical: theme.spacing.xl,
     alignItems: "center",
   },
   empty: {
@@ -464,12 +411,12 @@ const styles = StyleSheet.create({
     paddingVertical: 80,
   },
   emptyEmoji: {
-    fontSize: 60,
-    marginBottom: 12,
+    fontSize: theme.typography.sizes.xxxl,
+    marginBottom: theme.spacing.lg,
   },
   emptyText: {
-    fontSize: 14,
-    color: "#999",
-    fontWeight: "500",
+    fontSize: theme.typography.sizes.base,
+    color: theme.colors.text.tertiary,
+    fontWeight: theme.typography.weights.medium,
   },
 });

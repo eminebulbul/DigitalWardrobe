@@ -5,6 +5,7 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   TouchableOpacity,
@@ -15,6 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { CATEGORIES } from "../constants/categories";
 import { addClothing, CURRENT_USER_ID } from "../services/storage";
 import { removeBackgroundFromImage } from "../services/backgroundRemoval";
+import theme from "../constants/theme";
 
 const SORTED_CATEGORIES = CATEGORIES.slice().sort((a, b) =>
   a.localeCompare(b, "tr-TR", { sensitivity: "base" })
@@ -28,6 +30,7 @@ export default function AddClothingScreen() {
   const [saving, setSaving] = useState(false);
   const [removingBackground, setRemovingBackground] = useState(false);
   const [isBackgroundRemoved, setIsBackgroundRemoved] = useState(false);
+  const [isPublic, setIsPublic] = useState(false); // NEW: Kıyafet herkese açık mı?
 
   async function fitImageToCanvas(uri) {
     if (!uri) {
@@ -127,10 +130,12 @@ export default function AddClothingScreen() {
         imageUri,
         category: selectedCategory,
         description: description.trim(),
+        is_public: isPublic, // NEW: Kıyafet herkese açık mı?
       });
       setImageUri(null);
       setDescription("");
       setIsBackgroundRemoved(false);
+      setIsPublic(false);
       Alert.alert("Başarılı", "Kıyafet gardıroba eklendi.");
     } catch (error) {
       console.error("Error saving clothing:", error);
@@ -144,13 +149,13 @@ export default function AddClothingScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.heroCard}>
-          <Text style={styles.heroKicker}>GARDIROB GENIŞLET</Text>
+          <Text style={styles.heroKicker}>👕 GARDIROB GENIŞLET</Text>
           <Text style={styles.heroTitle}>Yeni Kıyafet Ekle</Text>
           <Text style={styles.heroDescription}>Fotoğraf seç, temizle ve koleksiyona kaydet</Text>
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeading}>Fotoğraf</Text>
+          <Text style={styles.sectionHeading}>📸 Fotoğraf</Text>
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.button} onPress={pickImageFromLibrary}>
               <Text style={styles.buttonText}>Galeriden Seç</Text>
@@ -196,7 +201,7 @@ export default function AddClothingScreen() {
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeading}>Kategori</Text>
+          <Text style={styles.sectionHeading}>📦 Kategori</Text>
           <Text style={styles.sectionDescription}>Kıyafeti en uygun kategoriye al ve düzenli tut.</Text>
 
           <TouchableOpacity
@@ -233,17 +238,35 @@ export default function AddClothingScreen() {
         </View>
 
         <View style={styles.sectionCard}>
-          <Text style={styles.sectionHeading}>Açıklama</Text>
+          <Text style={styles.sectionHeading}>✍️ Açıklama</Text>
           <Text style={styles.sectionDescription}>Kıyafetin notu, mevsim bilgisi veya kombin önerisi</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
             value={description}
             onChangeText={setDescription}
             placeholder="Notlarını yaz..."
-            placeholderTextColor="#90887c"
+            placeholderTextColor={theme.colors.text.tertiary}
             multiline
             textAlignVertical="top"
           />
+        </View>
+
+        {/* NEW: Visibility / is_public section */}
+        <View style={styles.sectionCard}>
+          <View style={styles.visibilityRow}>
+            <View style={styles.visibilityTextGroup}>
+              <Text style={styles.sectionHeading}>🌐 Profilde Görünsün</Text>
+              <Text style={styles.sectionDescription}>
+                Bu kıyafeti profilde herkese açık göster
+              </Text>
+            </View>
+            <Switch
+              value={isPublic}
+              onValueChange={setIsPublic}
+              trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+              thumbColor={isPublic ? theme.colors.secondary : theme.colors.white}
+            />
+          </View>
         </View>
 
         <View style={styles.primaryActionsRow}>
@@ -256,100 +279,93 @@ export default function AddClothingScreen() {
             onPress={saveClothing}
             disabled={saving}
           >
-            <Text style={styles.primaryActionText}>{saving ? "Kaydediliyor..." : "Kaydet"}</Text>
+            <Text style={styles.primaryActionText}>{saving ? "Kaydediliyor..." : "💾 Kaydet"}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
   content: {
-    padding: 16,
+    padding: theme.spacing.lg,
     paddingBottom: 110,
   },
   heroCard: {
-    borderRadius: 18,
-    backgroundColor: "#a855a8",
-    paddingHorizontal: 16,
-    paddingVertical: 18,
-    marginBottom: 14,
-    shadowColor: "#a855a8",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    borderRadius: theme.border.radius.lg,
+    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    ...theme.shadows.md,
   },
   heroKicker: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#f3e5f5",
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.white,
     letterSpacing: 1.2,
-    marginBottom: 4,
+    marginBottom: theme.spacing.sm,
   },
   heroTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: "#fff",
-    marginBottom: 6,
+    fontSize: theme.typography.sizes.xxl,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.white,
+    marginBottom: theme.spacing.md,
   },
   heroDescription: {
-    fontSize: 13,
-    color: "#f3e5f5",
-    fontWeight: "500",
+    fontSize: theme.typography.sizes.sm,
+    color: "rgba(255, 255, 255, 0.8)",
+    fontWeight: theme.typography.weights.medium,
   },
   sectionCard: {
-    borderRadius: 16,
+    borderRadius: theme.border.radius.lg,
     borderWidth: 1,
-    borderColor: "#e8dfd3",
-    backgroundColor: "#fff",
-    padding: 14,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+    ...theme.shadows.sm,
   },
   sectionHeading: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#3f3a34",
-    marginBottom: 6,
+    fontSize: theme.typography.sizes.base,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.md,
   },
   actionRow: {
     flexDirection: "row",
-    gap: 10,
-    marginBottom: 14,
+    gap: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
   },
   button: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#a855a8",
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.border.radius.md,
+    backgroundColor: theme.colors.primary,
     alignItems: "center",
-    shadowColor: "#a855a8",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    ...theme.shadows.sm,
   },
   buttonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 14,
+    color: theme.colors.white,
+    fontWeight: theme.typography.weights.bold,
+    fontSize: theme.typography.sizes.sm,
   },
   previewBox: {
     position: "relative",
-    borderRadius: 14,
+    borderRadius: theme.border.radius.md,
     borderWidth: 1,
-    borderColor: "#e7dfd3",
-    backgroundColor: "#fbf9f4",
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     minHeight: 280,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    marginBottom: 16,
+    marginBottom: theme.spacing.lg,
   },
   previewImage: {
     width: "100%",
@@ -357,143 +373,140 @@ const styles = StyleSheet.create({
   },
   previewOverlay: {
     position: "absolute",
-    left: 12,
-    right: 12,
-    bottom: 12,
+    left: theme.spacing.md,
+    right: theme.spacing.md,
+    bottom: theme.spacing.md,
     alignItems: "flex-end",
   },
   previewActionButton: {
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    backgroundColor: "rgba(168, 85, 168, 0.92)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.14,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: theme.border.radius.round,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.primary,
+    ...theme.shadows.sm,
   },
   previewActionText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 13,
+    color: theme.colors.white,
+    fontWeight: theme.typography.weights.bold,
+    fontSize: theme.typography.sizes.sm,
   },
   previewText: {
-    color: "#8a8176",
-  },
-  subtitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#3f3a34",
-    marginBottom: 8,
-    marginTop: 8,
+    color: theme.colors.text.secondary,
   },
   sectionDescription: {
-    color: "#7d756b",
-    marginBottom: 10,
-    fontSize: 12,
-    fontWeight: "500",
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing.md,
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.medium,
   },
   categoryDropdownTrigger: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderRadius: 10,
+    borderRadius: theme.border.radius.md,
     borderWidth: 1,
-    borderColor: "#ddd3c3",
-    backgroundColor: "#fcfaf6",
-    paddingHorizontal: 10,
-    paddingVertical: 12,
-    marginBottom: 10,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    marginBottom: theme.spacing.md,
   },
   categoryDropdownText: {
-    color: "#3d3731",
-    fontSize: 13,
-    fontWeight: "800",
+    color: theme.colors.text.primary,
+    fontSize: theme.typography.sizes.sm,
+    fontWeight: theme.typography.weights.bold,
   },
   categoryDropdownArrow: {
-    color: "#a855a8",
-    fontWeight: "800",
-    fontSize: 12,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.weights.bold,
+    fontSize: theme.typography.sizes.xs,
   },
   categoryBlockGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 10,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
   },
   categoryBlock: {
     minWidth: "30%",
-    borderRadius: 12,
+    borderRadius: theme.border.radius.md,
     borderWidth: 1,
-    borderColor: "#d8cebf",
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    backgroundColor: "#fbf8f2",
+    borderColor: theme.colors.border,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    backgroundColor: theme.colors.background,
     alignItems: "center",
     justifyContent: "center",
   },
   categoryBlockActive: {
-    borderColor: "#a855a8",
-    backgroundColor: "#f3e5f5",
+    borderColor: theme.colors.primary,
+    backgroundColor: "rgba(208, 83, 83, 0.1)",
   },
   categoryBlockText: {
-    fontWeight: "700",
-    color: "#5f584f",
-    fontSize: 12,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.sizes.xs,
   },
   categoryBlockTextActive: {
-    color: "#a855a8",
+    color: theme.colors.primary,
   },
   input: {
-    marginTop: 2,
-    marginBottom: 12,
+    marginTop: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
     borderWidth: 1,
-    borderColor: "#ddd3c3",
-    borderRadius: 12,
-    backgroundColor: "#fcfaf6",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    color: "#2d2925",
+    borderColor: theme.colors.border,
+    borderRadius: theme.border.radius.md,
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    color: theme.colors.text.primary,
   },
   textArea: {
     minHeight: 100,
   },
   processHint: {
-    borderRadius: 10,
+    borderRadius: theme.border.radius.md,
     borderWidth: 1,
-    borderColor: "#e8d5f2",
-    backgroundColor: "#f9f5fc",
-    color: "#6d4a8a",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: 12,
-    fontWeight: "500",
+    borderColor: theme.colors.secondary,
+    backgroundColor: "rgba(229, 143, 101, 0.1)",
+    color: theme.colors.primary,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.medium,
   },
   primaryActionsRow: {
-    marginTop: 4,
+    marginTop: theme.spacing.sm,
     flexDirection: "row",
-    gap: 10,
+    gap: theme.spacing.md,
   },
   primaryActionButton: {
     flex: 1,
-    borderRadius: 14,
-    paddingVertical: 14,
+    borderRadius: theme.border.radius.md,
+    paddingVertical: theme.spacing.lg,
     alignItems: "center",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 3,
+    ...theme.shadows.sm,
   },
   saveActionButton: {
-    backgroundColor: "#8b3a82",
+    backgroundColor: theme.colors.primary,
   },
   saveButtonDisabled: {
     opacity: 0.6,
   },
   primaryActionText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 15,
+    color: theme.colors.white,
+    fontWeight: theme.typography.weights.bold,
+    fontSize: theme.typography.sizes.base,
+  },
+  // NEW: Visibility switch styles
+  visibilityRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: theme.spacing.md,
+  },
+  visibilityTextGroup: {
+    flex: 1,
   },
 });
+

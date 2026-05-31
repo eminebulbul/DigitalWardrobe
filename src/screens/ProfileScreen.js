@@ -14,11 +14,10 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
 import { buildApiError, parseApiResponse, resolveApiBaseUrl } from "../services/api";
 import RemoteImage from "../components/RemoteImage";
+import theme from "../constants/theme";
 import {
   getClothes,
   getOutfits,
-  updateClothingVisibility,
-  updateOutfitVisibility,
   deleteClothing,
   deleteOutfit,
 } from "../services/storage";
@@ -127,42 +126,6 @@ export default function ProfileScreen({ navigation }) {
     ]);
   }
 
-  async function handleToggleClothingVisibility(clothId, currentVisibility) {
-    try {
-      const newVisibility = currentVisibility === "public" ? "private" : "public";
-      await updateClothingVisibility(clothId, newVisibility);
-      setClothes((prev) =>
-        prev.map((c) =>
-          c.id === clothId ? { ...c, visibility: newVisibility } : c
-        )
-      );
-      Alert.alert(
-        "Başarılı",
-        `Kıyafet ${newVisibility === "public" ? "herkese açık" : "gizli"} olarak ayarlandı.`
-      );
-    } catch (error) {
-      Alert.alert("Hata", error.message || "İşlem başarısız.");
-    }
-  }
-
-  async function handleToggleOutfitVisibility(outfitId, currentVisibility) {
-    try {
-      const newVisibility = currentVisibility === "public" ? "private" : "public";
-      await updateOutfitVisibility(outfitId, newVisibility);
-      setOutfits((prev) =>
-        prev.map((o) =>
-          o.id === outfitId ? { ...o, visibility: newVisibility } : o
-        )
-      );
-      Alert.alert(
-        "Başarılı",
-        `Kombin ${newVisibility === "public" ? "herkese açık" : "gizli"} olarak ayarlandı.`
-      );
-    } catch (error) {
-      Alert.alert("Hata", error.message || "İşlem başarısız.");
-    }
-  }
-
   async function handleDeleteClothing(clothId) {
     Alert.alert("Kıyafet Sil", "Bu kıyafeti silmek istediğinden emin misin?", [
       { text: "Vazgeç", style: "cancel" },
@@ -201,12 +164,16 @@ export default function ProfileScreen({ navigation }) {
     ]);
   }
 
-  const publicClothes = useMemo(() => clothes.filter((c) => c.visibility === "public"), [clothes]);
-  const privateClothes = useMemo(() => clothes.filter((c) => c.visibility === "private"), [clothes]);
-  const publicOutfits = useMemo(() => outfits.filter((o) => o.visibility === "public"), [outfits]);
-  const privateOutfits = useMemo(() => outfits.filter((o) => o.visibility === "private"), [outfits]);
+  const publicClothes = useMemo(
+    () => clothes.filter((item) => item.visibility === "public"),
+    [clothes]
+  );
+  const publicOutfits = useMemo(
+    () => outfits.filter((item) => item.visibility === "public"),
+    [outfits]
+  );
 
-  const renderClothItem = ({ item, isPublic }) => (
+  const renderClothItem = ({ item }) => (
     <TouchableOpacity style={styles.clothGridItem}>
       <View style={styles.clothGridCard}>
         <RemoteImage
@@ -215,9 +182,6 @@ export default function ProfileScreen({ navigation }) {
           style={styles.gridClothImage}
         />
         <View style={styles.gridClothOverlay} />
-        <View style={styles.gridClothBadge}>
-          <Text style={styles.gridClothBadgeText}>{isPublic ? "🌍" : "🔒"}</Text>
-        </View>
         <TouchableOpacity
           style={styles.deleteClothBtn}
           onPress={() => handleDeleteClothing(item.id)}
@@ -226,22 +190,12 @@ export default function ProfileScreen({ navigation }) {
         </TouchableOpacity>
         <View style={styles.gridClothLabel}>
           <Text style={styles.gridClothLabelText}>{item.category}</Text>
-          <TouchableOpacity
-            style={styles.toggleClothBtn}
-            onPress={() =>
-              handleToggleClothingVisibility(item.id, item.visibility)
-            }
-          >
-            <Text style={styles.toggleClothBtnText}>
-              {isPublic ? "Gizle" : "Paylaş"}
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
     </TouchableOpacity>
   );
 
-  const renderOutfitItem = ({ item, isPublic }) => (
+  const renderOutfitItem = ({ item }) => (
     <TouchableOpacity style={styles.outfitListItem}>
       <View style={styles.outfitListCard}>
         <View style={styles.outfitPlaceholder}>
@@ -254,21 +208,11 @@ export default function ProfileScreen({ navigation }) {
           </Text>
           <View style={styles.outfitListBadge}>
             <Text style={styles.outfitListBadgeText}>
-              {isPublic ? "🌍 Herkese Açık" : "🔒 Gizli"}
+              🌍 Herkese Açık
             </Text>
           </View>
         </View>
         <View style={styles.outfitActionButtons}>
-          <TouchableOpacity
-            style={styles.outfitToggleBtn}
-            onPress={() =>
-              handleToggleOutfitVisibility(item.id, item.visibility)
-            }
-          >
-            <Text style={styles.outfitToggleBtnText}>
-              {isPublic ? "Gizle" : "Paylaş"}
-            </Text>
-          </TouchableOpacity>
           <TouchableOpacity
             style={styles.outfitDeleteBtn}
             onPress={() => handleDeleteOutfit(item.id)}
@@ -294,12 +238,12 @@ export default function ProfileScreen({ navigation }) {
 
           <View style={styles.statsBar}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{clothes.length}</Text>
+              <Text style={styles.statValue}>{publicClothes.length}</Text>
               <Text style={styles.statLabel}>Kıyafet</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{outfits.length}</Text>
+              <Text style={styles.statValue}>{publicOutfits.length}</Text>
               <Text style={styles.statLabel}>Kombin</Text>
             </View>
             <View style={styles.statDivider} />
@@ -471,34 +415,21 @@ export default function ProfileScreen({ navigation }) {
                   <View>
                     {publicClothes.length > 0 && (
                       <View style={styles.contentSection}>
-                        <Text style={styles.sectionTitle}>🌍 Herkese Açık ({publicClothes.length})</Text>
+                        <Text style={styles.sectionTitle}>Kıyafetler ({publicClothes.length})</Text>
                         <View style={styles.clothGrid}>
                           {publicClothes.map((cloth) => (
                             <View key={cloth.id}>
-                              {renderClothItem({ item: cloth, isPublic: true })}
+                              {renderClothItem({ item: cloth })}
                             </View>
                           ))}
                         </View>
                       </View>
                     )}
 
-                    {privateClothes.length > 0 && (
-                      <View style={styles.contentSection}>
-                        <Text style={styles.sectionTitle}>🔒 Gizli ({privateClothes.length})</Text>
-                        <View style={styles.clothGrid}>
-                          {privateClothes.map((cloth) => (
-                            <View key={cloth.id}>
-                              {renderClothItem({ item: cloth, isPublic: false })}
-                            </View>
-                          ))}
-                        </View>
-                      </View>
-                    )}
-
-                    {clothes.length === 0 && (
+                    {publicClothes.length === 0 && (
                       <View style={styles.emptyState}>
                         <Text style={styles.emptyEmoji}>👕</Text>
-                        <Text style={styles.emptyText}>Henüz kıyafet eklenmedi</Text>
+                        <Text style={styles.emptyText}>Herkese acik kiyafet bulunmuyor</Text>
                       </View>
                     )}
                   </View>
@@ -508,30 +439,19 @@ export default function ProfileScreen({ navigation }) {
                   <View>
                     {publicOutfits.length > 0 && (
                       <View style={styles.contentSection}>
-                        <Text style={styles.sectionTitle}>🌍 Herkese Açık ({publicOutfits.length})</Text>
+                        <Text style={styles.sectionTitle}>Kombinler ({publicOutfits.length})</Text>
                         {publicOutfits.map((outfit) => (
                           <View key={outfit.id}>
-                            {renderOutfitItem({ item: outfit, isPublic: true })}
+                            {renderOutfitItem({ item: outfit })}
                           </View>
                         ))}
                       </View>
                     )}
 
-                    {privateOutfits.length > 0 && (
-                      <View style={styles.contentSection}>
-                        <Text style={styles.sectionTitle}>🔒 Gizli ({privateOutfits.length})</Text>
-                        {privateOutfits.map((outfit) => (
-                          <View key={outfit.id}>
-                            {renderOutfitItem({ item: outfit, isPublic: false })}
-                          </View>
-                        ))}
-                      </View>
-                    )}
-
-                    {outfits.length === 0 && (
+                    {publicOutfits.length === 0 && (
                       <View style={styles.emptyState}>
                         <Text style={styles.emptyEmoji}>✨</Text>
-                        <Text style={styles.emptyText}>Henüz kombin oluşturulmadı</Text>
+                        <Text style={styles.emptyText}>Herkese acik kombin bulunmuyor</Text>
                       </View>
                     )}
                   </View>
@@ -548,170 +468,164 @@ export default function ProfileScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFAFA",
+    backgroundColor: theme.colors.background,
   },
   content: {
     paddingBottom: 40,
   },
   profileHeader: {
-    backgroundColor: "#fff",
-    paddingVertical: 24,
-    paddingHorizontal: 16,
+    backgroundColor: theme.colors.surface,
+    paddingVertical: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.lg,
     alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: theme.colors.border,
   },
   avatarLarge: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#FFE5ED",
+    backgroundColor: "rgba(208, 83, 83, 0.1)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   avatarEmojiLarge: {
     fontSize: 40,
   },
   profileName: {
-    fontSize: 24,
-    fontWeight: "900",
-    color: "#000",
-    marginBottom: 4,
+    fontSize: theme.typography.sizes.xxl,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.xs,
   },
   profileEmail: {
-    fontSize: 13,
-    color: "#666",
-    fontWeight: "600",
-    marginBottom: 16,
+    fontSize: theme.typography.sizes.sm,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.weights.medium,
+    marginBottom: theme.spacing.lg,
   },
   statsBar: {
     flexDirection: "row",
     justifyContent: "space-around",
     width: "100%",
-    paddingTop: 12,
+    paddingTop: theme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
+    borderTopColor: theme.colors.border,
   },
   statItem: {
     alignItems: "center",
     flex: 1,
   },
   statValue: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#000",
-    marginBottom: 2,
+    fontSize: theme.typography.sizes.xl,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.xs,
   },
   statLabel: {
-    fontSize: 11,
-    color: "#999",
-    fontWeight: "600",
+    fontSize: theme.typography.sizes.xs,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.weights.medium,
   },
   statDivider: {
     width: 1,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: theme.colors.border,
   },
   profileInfoCard: {
-    marginHorizontal: 12,
-    marginTop: 12,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.border.radius.lg,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    ...theme.shadows.sm,
   },
   infoItem: {
-    paddingVertical: 10,
+    paddingVertical: theme.spacing.md,
   },
   infoItemBorder: {
     borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
-    paddingTop: 12,
+    borderTopColor: theme.colors.border,
+    paddingTop: theme.spacing.md,
   },
   infoLabel: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#666",
-    marginBottom: 6,
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing.sm,
   },
   infoValue: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#333",
+    fontSize: theme.typography.sizes.base,
+    fontWeight: theme.typography.weights.medium,
+    color: theme.colors.text.primary,
     lineHeight: 20,
   },
   infoEmpty: {
-    fontSize: 14,
-    color: "#999",
-    fontWeight: "500",
+    fontSize: theme.typography.sizes.sm,
+    color: theme.colors.text.tertiary,
+    fontWeight: theme.typography.weights.medium,
     textAlign: "center",
-    paddingVertical: 16,
+    paddingVertical: theme.spacing.lg,
   },
   actionButtons: {
-    marginHorizontal: 12,
-    marginTop: 12,
-    gap: 10,
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    gap: theme.spacing.md,
   },
   actionBtn: {
-    backgroundColor: "#FF6B9D",
-    borderRadius: 12,
-    paddingVertical: 14,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.border.radius.md,
+    paddingVertical: theme.spacing.lg,
     alignItems: "center",
+    ...theme.shadows.sm,
   },
   actionBtnDanger: {
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.surface,
     borderWidth: 2,
-    borderColor: "#ff4444",
+    borderColor: theme.colors.error,
   },
   actionBtnText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 14,
+    color: theme.colors.white,
+    fontWeight: theme.typography.weights.bold,
+    fontSize: theme.typography.sizes.sm,
   },
   actionBtnDangerText: {
-    color: "#ff4444",
+    color: theme.colors.error,
   },
   editCard: {
-    marginHorizontal: 12,
-    marginTop: 12,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 14,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
+    marginHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.border.radius.lg,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.md,
+    ...theme.shadows.sm,
   },
   editTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#000",
-    marginBottom: 14,
+    fontSize: theme.typography.sizes.base,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.lg,
   },
   formGroup: {
-    marginBottom: 14,
+    marginBottom: theme.spacing.lg,
   },
   formLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#666",
-    marginBottom: 6,
+    fontSize: theme.typography.sizes.sm,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing.sm,
   },
   formInput: {
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: "#333",
+    borderColor: theme.colors.border,
+    borderRadius: theme.border.radius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    fontSize: theme.typography.sizes.base,
+    color: theme.colors.text.primary,
+    backgroundColor: theme.colors.background,
   },
   formTextArea: {
     minHeight: 80,
@@ -719,99 +633,97 @@ const styles = StyleSheet.create({
   },
   formButtonRow: {
     flexDirection: "row",
-    gap: 10,
-    marginTop: 16,
+    gap: theme.spacing.md,
+    marginTop: theme.spacing.lg,
   },
   formBtnSecondary: {
     flex: 1,
     borderWidth: 2,
-    borderColor: "#e0e0e0",
-    borderRadius: 10,
-    paddingVertical: 12,
+    borderColor: theme.colors.border,
+    borderRadius: theme.border.radius.md,
+    paddingVertical: theme.spacing.md,
     alignItems: "center",
   },
   formBtnSecondaryText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#666",
+    fontSize: theme.typography.sizes.sm,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.secondary,
   },
   formBtnPrimary: {
     flex: 1,
-    backgroundColor: "#FF6B9D",
-    borderRadius: 10,
-    paddingVertical: 12,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.border.radius.md,
+    paddingVertical: theme.spacing.md,
     alignItems: "center",
+    ...theme.shadows.sm,
   },
   formBtnPrimaryText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#fff",
+    fontSize: theme.typography.sizes.sm,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.white,
   },
   formBtnDisabled: {
     opacity: 0.6,
   },
   tabsGroup: {
     flexDirection: "row",
-    backgroundColor: "#fff",
+    backgroundColor: theme.colors.surface,
     marginTop: 1,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    gap: 8,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    gap: theme.spacing.sm,
   },
   tabButton: {
     flex: 1,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: "#f5f5f5",
+    paddingVertical: theme.spacing.md,
+    borderRadius: theme.border.radius.md,
+    backgroundColor: theme.colors.surface,
     alignItems: "center",
   },
   tabButtonActive: {
-    backgroundColor: "#FF6B9D",
+    backgroundColor: theme.colors.primary,
   },
   tabButtonText: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#666",
+    fontSize: theme.typography.sizes.sm,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.secondary,
   },
   tabButtonTextActive: {
-    color: "#fff",
+    color: theme.colors.white,
   },
   loadingContainer: {
     paddingVertical: 60,
     alignItems: "center",
+    justifyContent: "center",
   },
   contentSection: {
-    paddingHorizontal: 12,
-    paddingTop: 12,
+    paddingHorizontal: theme.spacing.md,
+    paddingTop: theme.spacing.md,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#000",
-    marginBottom: 10,
+    fontSize: theme.typography.sizes.sm,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.md,
   },
   clothGrid: {
-    gap: 8,
-    marginBottom: 12,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
   },
   clothGridItem: {
-    marginBottom: 8,
+    marginBottom: theme.spacing.sm,
   },
   clothGridCard: {
-    borderRadius: 12,
+    borderRadius: theme.border.radius.md,
     overflow: "hidden",
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: theme.colors.surface,
+    ...theme.shadows.sm,
     position: "relative",
   },
   gridClothImage: {
     width: "100%",
     height: 120,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: theme.colors.surface,
   },
   gridClothOverlay: {
     position: "absolute",
@@ -821,155 +733,115 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: "rgba(0, 0, 0, 0.08)",
   },
-  gridClothBadge: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    borderRadius: 14,
-    width: 28,
-    height: 28,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  gridClothBadgeText: {
-    fontSize: 14,
-  },
   gridClothLabel: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     backgroundColor: "rgba(0, 0, 0, 0.7)",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
   gridClothLabelText: {
-    color: "#fff",
-    fontSize: 11,
-    fontWeight: "700",
+    color: theme.colors.white,
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.bold,
     flex: 1,
   },
-  toggleClothBtn: {
-    backgroundColor: "#FF6B9D",
-    borderRadius: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-  },
-  toggleClothBtnText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#fff",
-  },
   outfitListItem: {
-    marginBottom: 10,
+    marginBottom: theme.spacing.md,
   },
   outfitListCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.border.radius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    gap: theme.spacing.md,
+    ...theme.shadows.sm,
   },
   outfitPlaceholder: {
     width: 45,
     height: 45,
-    borderRadius: 8,
-    backgroundColor: "#667eea",
+    borderRadius: theme.border.radius.md,
+    backgroundColor: theme.colors.primary,
     justifyContent: "center",
     alignItems: "center",
   },
   outfitPlaceholderEmoji: {
-    fontSize: 20,
+    fontSize: theme.typography.sizes.xl,
   },
   outfitListInfo: {
     flex: 1,
   },
   outfitListName: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#000",
-    marginBottom: 2,
+    fontSize: theme.typography.sizes.base,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.xs,
   },
   outfitListCount: {
-    fontSize: 12,
-    color: "#999",
-    fontWeight: "500",
-    marginBottom: 4,
+    fontSize: theme.typography.sizes.xs,
+    color: theme.colors.text.tertiary,
+    fontWeight: theme.typography.weights.medium,
+    marginBottom: theme.spacing.sm,
   },
   outfitListBadge: {
-    backgroundColor: "#f0f0f0",
-    borderRadius: 6,
-    paddingVertical: 2,
-    paddingHorizontal: 8,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.border.radius.sm,
+    paddingVertical: theme.spacing.xs,
+    paddingHorizontal: theme.spacing.sm,
     alignSelf: "flex-start",
   },
   outfitListBadgeText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#666",
-  },
-  outfitToggleBtn: {
-    backgroundColor: "#FF6B9D",
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-  },
-  outfitToggleBtnText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#fff",
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.secondary,
   },
   deleteClothBtn: {
     position: "absolute",
-    top: 8,
-    left: 8,
+    top: theme.spacing.sm,
+    left: theme.spacing.sm,
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(255, 0, 0, 0.8)",
+    backgroundColor: theme.colors.error,
     justifyContent: "center",
     alignItems: "center",
   },
   deleteClothBtnText: {
-    fontSize: 16,
+    fontSize: theme.typography.sizes.base,
   },
   outfitActionButtons: {
     flexDirection: "row",
-    gap: 8,
+    gap: theme.spacing.sm,
   },
   outfitDeleteBtn: {
-    backgroundColor: "rgba(255, 0, 0, 0.8)",
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    backgroundColor: theme.colors.error,
+    borderRadius: theme.border.radius.md,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
   },
   outfitDeleteBtnText: {
-    fontSize: 11,
-    fontWeight: "700",
+    fontSize: theme.typography.sizes.xs,
+    fontWeight: theme.typography.weights.bold,
   },
   emptyState: {
     paddingVertical: 60,
-    paddingHorizontal: 12,
+    paddingHorizontal: theme.spacing.md,
     alignItems: "center",
   },
   emptyEmoji: {
     fontSize: 48,
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   emptyText: {
-    fontSize: 14,
-    color: "#999",
-    fontWeight: "500",
+    fontSize: theme.typography.sizes.sm,
+    color: theme.colors.text.secondary,
+    fontWeight: theme.typography.weights.medium,
   },
 });

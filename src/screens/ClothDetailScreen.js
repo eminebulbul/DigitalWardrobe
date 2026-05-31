@@ -14,7 +14,7 @@ import RemoteImage from "../components/RemoteImage";
 import { getPublicClothes, getUserProfile } from "../services/storage";
 
 export default function ClothDetailScreen({ route, navigation }) {
-  const { clothId, userId } = route.params;
+  const { clothId, userId, hideStatus = false } = route.params;
 
   const [cloth, setCloth] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -137,13 +137,17 @@ export default function ClothDetailScreen({ route, navigation }) {
               {new Date(cloth.createdAt).toLocaleDateString("tr-TR")}
             </Text>
           </View>
-          <View style={styles.detailDivider} />
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Durum</Text>
-            <Text style={styles.detailValue}>
-              {cloth.visibility === "public" ? "🌍 Herkese Açık" : "🔒 Gizli"}
-            </Text>
-          </View>
+          {!hideStatus && (
+            <>
+              <View style={styles.detailDivider} />
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Durum</Text>
+                <Text style={styles.detailValue}>
+                  {cloth.visibility === "public" ? "🌍 Herkese Açık" : "🔒 Gizli"}
+                </Text>
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

@@ -12,10 +12,10 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import RemoteImage from "../components/RemoteImage";
-import { getPublicOutfits, getPublicClothes, getUserProfile, saveOutfit, removeSavedOutfit } from "../services/storage";
+import { getOutfitById, getUserProfile, saveOutfit, removeSavedOutfit } from "../services/storage";
 
 export default function OutfitDetailScreen({ route, navigation }) {
-  const { outfitId, userId } = route.params;
+  const { outfitId } = route.params;
 
   const [outfit, setOutfit] = useState(null);
   const [clothes, setClothes] = useState([]);
@@ -27,22 +27,11 @@ export default function OutfitDetailScreen({ route, navigation }) {
   const loadDetails = useCallback(async () => {
     try {
       setLoading(true);
-      const [outfitsData, clothesData, profileData] = await Promise.all([
-        getPublicOutfits(userId),
-        getPublicClothes(userId),
-        getUserProfile(userId),
-      ]);
+      const outfitData = await getOutfitById(outfitId);
+      const profileData = await getUserProfile(outfitData.userId);
 
-      const outfitItem = outfitsData.find((o) => o.id === outfitId);
-      if (outfitItem) {
-        setOutfit(outfitItem);
-
-        // Filter clothes that are in this outfit
-        const outfitClothes = clothesData.filter((c) =>
-          Array.isArray(outfitItem.clothesIds) && outfitItem.clothesIds.includes(c.id)
-        );
-        setClothes(outfitClothes);
-      }
+      setOutfit(outfitData);
+      setClothes(Array.isArray(outfitData.clothes) ? outfitData.clothes : []);
 
       setUserProfile(profileData);
     } catch (error) {
@@ -51,7 +40,7 @@ export default function OutfitDetailScreen({ route, navigation }) {
     } finally {
       setLoading(false);
     }
-  }, [outfitId, userId]);
+  }, [outfitId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -77,6 +66,13 @@ export default function OutfitDetailScreen({ route, navigation }) {
       setSavingLoading(false);
     }
   };
+
+  function formatSafeDate(value) {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "-";
+    return date.toLocaleDateString("tr-TR");
+  }
 
   if (loading) {
     return (
@@ -143,7 +139,7 @@ export default function OutfitDetailScreen({ route, navigation }) {
           <TouchableOpacity
             style={styles.visitProfileBtn}
             onPress={() =>
-              navigation.navigate("OtherUserProfile", { userId: userProfile.id || userId })
+              navigation.navigate("OtherUserProfile", { userId: userProfile.id || outfit.userId })
             }
           >
             <Text style={styles.visitProfileBtnText}>Profili Ziyaret Et →</Text>
@@ -176,7 +172,7 @@ export default function OutfitDetailScreen({ route, navigation }) {
                   onPress={() =>
                     navigation.navigate("ClothDetail", {
                       clothId: cloth.id,
-                      userId: userId,
+                      userId: outfit.userId,
                     })
                   }
                 >
@@ -205,7 +201,7 @@ export default function OutfitDetailScreen({ route, navigation }) {
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Paylaşılan Tarih</Text>
             <Text style={styles.detailValue}>
-              {new Date(outfit.createdAt).toLocaleDateString("tr-TR")}
+              {formatSafeDate(outfit.created_at || outfit.createdAt)}
             </Text>
           </View>
           <View style={styles.detailDivider} />
