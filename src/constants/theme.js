@@ -1,48 +1,51 @@
 /**
- * Sundown Harvest Theme
- * Merkezi tema yapılandırması - tüm ekranlar bu dosyadan renkler ve değerler çeker
+ * Blooming Garden Theme
+ * Canlı, enerjik ve pembe/mor ağırlıklı yeni tema
  */
 
 export const theme = {
   // ========== RENKLER ==========
   colors: {
-    // Ana Vurgu - Butonlar, Headers, Primary Actionlar
-    primary: "#D05353",        // Indian Red
-    primaryLight: "#E07373",
-    primaryDark: "#B83D3D",
+    // Ana Vurgu (Deep Cerise) - Butonlar, Headers, Primary Actionlar
+    primary: "#cb4d8c",        
+    primaryLight: "#E86EAE",   // Tıklanma efekti için açığı
+    primaryDark: "#AA2D6B",    // Daha koyu tonu
     
-    // İkincil Vurgu - Aktif İkonlar, Secondary Buttons
-    secondary: "#E58F65",      // Dark Salmon
-    secondaryLight: "#F0A87F",
-    secondaryDark: "#D67A52",
+    // İkincil Vurgu (Lavender Violet) - İkonlar, Alt Seçenekler
+    secondary: "#7758A3",      
+    secondaryLight: "#9579BE", 
+    secondaryDark: "#58407A",  
     
-    // Arka Plan - Main Background, Large Surfaces
-    background: "#F9E784",     // Cornsilk
+    // Arka Plan - Pembenin çok uçuk hali, temanın her yerde hissedilmesi için
+    background: "#FFF0F6",     
     
-    // Card/Surface - Kart Arka Planları, Container Boxları
-    surface: "#F1E8B8",        // Light Khaki
-    surfaceLight: "#F7F4D4",
-    surfaceDark: "#E8DFA0",
+    // Card/Surface - Kart Arka Planları
+    surface: "#FFFFFF",        // Okunabilirlik için kart içleri temiz beyaz
+    surfaceLight: "#FFAFEB",   // Lavender Rose - Vurgulu/renkli kartlar için
+    surfaceDark: "#F6C45C",    // Honey Gold - Etiketler, rozetler veya dikkat çekici alanlar için
     
+    // Accent / Info (Ruddy Blue) - Dikkat çekici küçük detaylar için
+    accent: "#66A5ED",
+
     // Metinler
     text: {
-      primary: "#1a1a1a",      // Koyu gri/siyah - başlıklar, ana metinler
-      secondary: "#4a4a4a",    // Orta gri - açıklamalar, alt metinler
-      tertiary: "#7a7a7a",     // Açık gri - placeholder, disabled text
-      light: "#f5f5f5",        // Açık - dark background üzerinde text
+      primary: "#3D2B52",      // Lavender Violet'in okunabilirlik için çok koyulaştırılmış mor-siyah hali
+      secondary: "#7758A3",    // Alt başlıklar ve açıklamalar için Lavender Violet
+      tertiary: "#A897BE",     // Pasif metinler/placeholder'lar
+      light: "#FFFFFF",        // Pembe butonların üzerindeki yazılar için beyaz
     },
     
-    // Utility Colors
-    success: "#10b981",        // Yeşil - başarı, kaydedildi
-    warning: "#f59e0b",        // Turuncu - uyarı
-    error: "#ef4444",          // Kırmızı - hata
-    info: "#3b82f6",           // Mavi - bilgi
+    // Utility Colors 
+    success: "#4CAF50",        // Başarı/onay için standart yeşil (UX için gerekli)
+    warning: "#F6C45C",        // Honey Gold (Sarı/Turuncu uyarı)
+    error: "#DB3E8C",          // Hatalar için Deep Cerise
+    info: "#66A5ED",           // Ruddy Blue (Bilgilendirme)
     
     // Neutral
     white: "#ffffff",
     black: "#000000",
-    border: "#e5e5e5",         // Light gray borders
-    divider: "#d9d9d9",        // Divider color
+    border: "#EAD9E3",         // Pembe alt tonlu yumuşak kenarlıklar
+    divider: "#F2E6ED",        // Arayüz ayırıcı çizgileri
   },
 
   // ========== SPACING ==========
@@ -90,55 +93,34 @@ export const theme = {
   // ========== GÖLGELERİ (Shadows - Android için elevation, iOS için shadowOpacity) ==========
   shadows: {
     sm: {
-      shadowColor: "#000",
+      shadowColor: "#3D2B52",  // Gölgelere mor bir derinlik kattık
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.18,
-      shadowRadius: 1.0,
+      shadowOpacity: 0.1,
+      shadowRadius: 2.0,
       elevation: 1,
     },
     md: {
-      shadowColor: "#000",
+      shadowColor: "#3D2B52",
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
+      shadowOpacity: 0.15,
       shadowRadius: 3.84,
       elevation: 5,
     },
     lg: {
-      shadowColor: "#000",
+      shadowColor: "#3D2B52",
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
+      shadowOpacity: 0.2,
       shadowRadius: 4.65,
       elevation: 8,
     },
     xl: {
-      shadowColor: "#000",
+      shadowColor: "#3D2B52",
       shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.37,
+      shadowOpacity: 0.25,
       shadowRadius: 7.49,
       elevation: 12,
     },
   },
-
-  // ========== SADELIĞIN ÖNESİ ==========
-  // Örnek kullanım:
-  // const styles = StyleSheet.create({
-  //   button: {
-  //     backgroundColor: theme.colors.primary,
-  //     borderRadius: theme.border.radius.md,
-  //     padding: theme.spacing.md,
-  //   },
-  //   card: {
-  //     backgroundColor: theme.colors.surface,
-  //     borderRadius: theme.border.radius.lg,
-  //     padding: theme.spacing.lg,
-  //     ...theme.shadows.md,
-  //   },
-  //   text: {
-  //     color: theme.colors.text.primary,
-  //     fontSize: theme.typography.sizes.base,
-  //     fontWeight: theme.typography.weights.normal,
-  //   },
-  // });
 };
 
 export default theme;

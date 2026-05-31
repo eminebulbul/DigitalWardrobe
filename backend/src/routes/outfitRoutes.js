@@ -10,6 +10,7 @@ import {
   removeSavedOutfit,
   saveOutfit,
   toggleOutfitVisibility,
+  getOutfitClothesVisibility,
 } from "../controllers/outfitController.js";
 import { requireAuth } from "../middlewares/auth.js";
 
@@ -20,6 +21,7 @@ router.get("/outfits/:id", requireAuth, getOutfitById);
 router.post("/outfits", requireAuth, createOutfit);
 router.delete("/outfits/:id", requireAuth, deleteOutfit);
 router.put("/outfits/:id/visibility", requireAuth, toggleOutfitVisibility);
+router.get("/outfits/:id/clothes-visibility", requireAuth, getOutfitClothesVisibility);
 router.post("/outfits/:id/save", requireAuth, saveOutfit);
 router.get("/saved-outfits", requireAuth, getSavedOutfits);
 router.delete("/saved-outfits/:outfitId", requireAuth, removeSavedOutfit);

@@ -10,6 +10,8 @@ import authRoutes from "./routes/authRoutes.js";
 import clothesRoutes from "./routes/clothesRoutes.js";
 import outfitRoutes from "./routes/outfitRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
+import { upload } from "./middlewares/upload.js";
+import { removeBackground } from "./controllers/clothesController.js";
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -35,6 +37,9 @@ app.use("/api/clothes", clothesRoutes);
 app.use("/api", outfitRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/users", profileRoutes);
+
+// Backwards-compatible endpoint: allow POST /api/remove-background
+app.post("/api/remove-background", upload.single("image"), removeBackground);
 
 async function startServer() {
   await ensureUploadFolders();

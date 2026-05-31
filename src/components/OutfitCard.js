@@ -15,10 +15,6 @@ export default function OutfitCard({
       ? outfit.clothes
       : [];
 
-  if (pieces.length > 0) {
-    console.log("Piece Data:", pieces[0]);
-  }
-
   const createdAt = outfit?.createdAt || outfit?.created_at || null;
 
   function formatDate(value) {
@@ -46,7 +42,7 @@ export default function OutfitCard({
             pieces.map((piece) => (
               <View key={piece.id || piece.cloth_id} style={styles.pieceCard}>
                 <RemoteImage
-                  publicUri={piece.image_url || piece.imageUri || piece.imageUrl || piece.cloth?.image_url}
+                  publicUri={piece.imageUri || piece.image_url || piece.cloth?.image_url}
                   clothId={piece.id || piece.cloth_id}
                   style={styles.pieceImage}
                 />

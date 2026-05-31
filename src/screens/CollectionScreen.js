@@ -16,6 +16,7 @@ import {
   getClothes,
   getOutfits,
   removeOutfit,
+  removeClothing,
   getFavoriteOutfits,
   getFavoriteClothes,
   toggleFavoriteOutfit,
@@ -108,6 +109,24 @@ export default function CollectionScreen({ navigation }) {
               },
             },
           ]);
+        },
+      },
+    ]);
+  }
+
+  function handleDeleteCloth(item) {
+    Alert.alert("Kıyafeti Sil", "Bu kıyafet koleksiyonundan kaldırılacak. Emin misin?", [
+      { text: "Vazgeç", style: "cancel" },
+      {
+        text: "Sil",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await removeClothing(item.id);
+            await loadData();
+          } catch (error) {
+            Alert.alert("Hata", error.message || "Kıyafet silinemedi");
+          }
         },
       },
     ]);
@@ -237,29 +256,36 @@ export default function CollectionScreen({ navigation }) {
                         {item.description}
                       </Text>
                     )}
-                    <TouchableOpacity
-                      style={[
-                        styles.shareButton,
-                        item.visibility === "public" && styles.shareButtonActive,
-                      ]}
-                      onPress={async () => {
-                        try {
-                          console.log("Sharing cloth:", item.id, "current visibility:", item.visibility);
-                          const newVisibility =
-                            item.visibility === "public" ? "private" : "public";
-                          await updateClothingVisibility(item.id, newVisibility);
-                          console.log("Visibility updated to:", newVisibility);
-                          await loadData();
-                        } catch (error) {
-                          console.error("Share error:", error);
-                          Alert.alert("Hata", error.message || "Paylaş işlemi başarısız");
-                        }
-                      }}
-                    >
-                      <Text style={styles.shareButtonText}>
-                        {item.visibility === "public" ? "🌐 Paylaşılıyor" : "🔒 Özel"}
-                      </Text>
-                    </TouchableOpacity>
+                    <View style={styles.clothActionsRow}>
+                      <TouchableOpacity
+                        style={[
+                          styles.shareButton,
+                          styles.clothActionButton,
+                          item.visibility === "public" && styles.shareButtonActive,
+                        ]}
+                        onPress={async () => {
+                          try {
+                            const newVisibility =
+                              item.visibility === "public" ? "private" : "public";
+                            await updateClothingVisibility(item.id, newVisibility);
+                            await loadData();
+                          } catch (error) {
+                            Alert.alert("Hata", error.message || "Paylaş işlemi başarısız");
+                          }
+                        }}
+                      >
+                        <Text style={styles.shareButtonText}>
+                          {item.visibility === "public" ? "🌐 Paylaşılıyor" : "🔒 Özel"}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.deleteButton, styles.clothActionButton]}
+                        onPress={() => handleDeleteCloth(item)}
+                      >
+                        <Text style={styles.deleteButtonText}>Sil</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 ))}
               </View>
@@ -631,6 +657,16 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.xs,
     fontWeight: theme.typography.weights.semibold,
     color: theme.colors.text.primary,
+  },
+  clothActionsRow: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.sm,
+    paddingBottom: theme.spacing.sm,
+  },
+  clothActionButton: {
+    flex: 1,
+    marginTop: theme.spacing.sm,
   },
   deleteButton: {
     marginTop: theme.spacing.md,

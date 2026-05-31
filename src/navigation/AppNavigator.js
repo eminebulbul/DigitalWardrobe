@@ -1,7 +1,8 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { TouchableOpacity, Text, ActivityIndicator, View } from "react-native";
+import { TouchableOpacity, ActivityIndicator, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 // Screens
 import CreateOutfitScreen from "../screens/CreateOutfitScreen";
@@ -18,6 +19,7 @@ import OutfitDetailScreen from "../screens/OutfitDetailScreen";
 // Components
 import FloatingTabBar from "../components/FloatingTabBar";
 import { useAuth } from "../context/AuthContext";
+import theme from "../constants/theme";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -35,9 +37,17 @@ function AppTabs() {
     <Tab.Navigator
       tabBar={(props) => <FloatingTabBar {...props} variant="folder" />}
       screenOptions={({ navigation, route }) => ({
-        headerStyle: { backgroundColor: "#ffffff" },
+        headerStyle: {
+          backgroundColor: theme.colors.background,
+          elevation: 0,
+          shadowOpacity: 0,
+          borderBottomWidth: 0,
+        },
         headerShadowVisible: false,
-        headerTitleStyle: { fontWeight: "800", color: "#2b2622" },
+        headerTitleStyle: {
+          fontWeight: theme.typography.weights.bold,
+          color: theme.colors.text.primary,
+        },
         headerTitleAlign: "center",
         headerLeft: () => {
           const isHome = route.name === "Ana Sayfa";
@@ -54,15 +64,18 @@ function AppTabs() {
                 }
                 navigation.navigate("Ana Sayfa");
               }}
-              style={{ marginLeft: 14, paddingHorizontal: 8, paddingVertical: 4 }}
+              style={{
+                marginLeft: theme.spacing.sm,
+                paddingHorizontal: theme.spacing.xs,
+                paddingVertical: theme.spacing.xs,
+              }}
             >
-              <Text style={{ fontSize: 24, color: "#3f3a34", fontWeight: "800" }}>{"<"}</Text>
+              <Ionicons name="chevron-back" size={24} color={theme.colors.text.primary} />
             </TouchableOpacity>
           );
         },
       })}
     >
-      {/* 1. Ana Sayfa - Shuffle/Kombin Oluştur */}
       <Tab.Screen
         name="Ana Sayfa"
         component={CreateOutfitScreen}
@@ -72,7 +85,6 @@ function AppTabs() {
         }}
       />
 
-      {/* 2. Kıyafet Ekle */}
       <Tab.Screen
         name="Kıyafet Ekle"
         component={AddClothingScreen}
@@ -82,7 +94,6 @@ function AppTabs() {
         }}
       />
 
-      {/* 3. Keşfet (Discover - Sosyal Feed) */}
       <Tab.Screen
         name="Keşfet"
         component={DiscoverScreen}
@@ -92,7 +103,6 @@ function AppTabs() {
         }}
       />
 
-      {/* 4. Dolap (Wardrobe) - İçinde 3 Top Tab sekme olacak */}
       <Tab.Screen
         name="Dolap"
         component={CollectionScreen}
@@ -102,7 +112,6 @@ function AppTabs() {
         }}
       />
 
-      {/* 5. Profil */}
       <Tab.Screen
         name="Profil"
         component={ProfileScreen}
@@ -123,7 +132,6 @@ function AppTabs() {
 function AppStack() {
   return (
     <Stack.Navigator>
-      {/* Main Tab Navigator */}
       <Stack.Group>
         <Stack.Screen
           name="MainTabs"
@@ -132,40 +140,49 @@ function AppStack() {
         />
       </Stack.Group>
 
-      {/* Modal Screens - Başkasının profili, Kombin detayı, Kıyafet detayı */}
       <Stack.Group
         screenOptions={({ navigation }) => ({
           presentation: "card",
           animationEnabled: true,
-          headerStyle: { backgroundColor: "#ffffff" },
+          headerStyle: {
+            backgroundColor: theme.colors.background,
+            elevation: 0,
+            shadowOpacity: 0,
+            borderBottomWidth: 0,
+          },
           headerShadowVisible: false,
-          headerTitleStyle: { fontWeight: "800", color: "#2b2622" },
+          headerTitleStyle: {
+            fontWeight: theme.typography.weights.bold,
+            color: theme.colors.text.primary,
+          },
           headerTitleAlign: "center",
+          headerBackVisible: false,
           headerLeft: () => (
             <TouchableOpacity
-              style={{ marginLeft: 14, paddingHorizontal: 8, paddingVertical: 4 }}
+              style={{
+                marginLeft: theme.spacing.sm,
+                paddingHorizontal: theme.spacing.xs,
+                paddingVertical: theme.spacing.xs,
+              }}
               onPress={() => navigation.goBack()}
             >
-              <Text style={{ fontSize: 24, color: "#3f3a34", fontWeight: "800" }}>{"<"}</Text>
+              <Ionicons name="chevron-back" size={24} color={theme.colors.text.primary} />
             </TouchableOpacity>
           ),
         })}
       >
-        {/* Başka bir kullanıcının profilini görmek için */}
         <Stack.Screen
           name="OtherUserProfile"
           component={OtherUserProfileScreen}
           options={{ title: "Profil" }}
         />
 
-        {/* Kombin detay sayfası (Keşfet'ten tıklandığında) */}
         <Stack.Screen
           name="OutfitDetail"
           component={OutfitDetailScreen}
           options={{ title: "Kombin Detayı" }}
         />
 
-        {/* Kıyafet detay sayfası */}
         <Stack.Screen
           name="ClothDetail"
           component={ClothDetailScreen}
@@ -183,12 +200,43 @@ function AuthStack() {
   return (
     <Stack.Navigator
       screenOptions={{
-        headerShown: false,
         animationEnabled: true,
+        headerShadowVisible: false,
       }}
     >
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen
+        name="Login"
+        component={LoginScreen}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="Register"
+        component={RegisterScreen}
+        options={({ navigation }) => ({
+          title: "",
+          headerTransparent: true,
+          headerShadowVisible: false,
+          headerBackVisible: false,
+          headerStyle: {
+            backgroundColor: "transparent",
+            elevation: 0,
+            shadowOpacity: 0,
+            borderBottomWidth: 0,
+          },
+          headerLeft: () => (
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={{
+                marginLeft: theme.spacing.sm,
+                paddingHorizontal: theme.spacing.xs,
+                paddingVertical: theme.spacing.xs,
+              }}
+            >
+              <Ionicons name="chevron-back" size={24} color={theme.colors.text.primary} />
+            </TouchableOpacity>
+          ),
+        })}
+      />
     </Stack.Navigator>
   );
 }
@@ -201,8 +249,15 @@ export default function AppNavigator() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#EAF7FF" }}>
-        <ActivityIndicator size="large" color="#F89DAC" />
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: theme.colors.background,
+        }}
+      >
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }

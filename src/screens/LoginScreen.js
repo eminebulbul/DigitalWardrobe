@@ -10,12 +10,19 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../context/AuthContext";
+import theme from "../constants/theme";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
   const { login } = useAuth();
+
+  const getInputStyle = (field) => [
+    styles.input,
+    focusedField === field && styles.inputFocused,
+  ];
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {
@@ -47,27 +54,31 @@ export default function LoginScreen({ navigation }) {
         <View style={styles.form}>
           <Text style={styles.label}>Email</Text>
           <TextInput
-            style={styles.input}
+            style={getInputStyle("email")}
             value={email}
             onChangeText={setEmail}
             placeholder="seni@example.com"
-            placeholderTextColor="#999"
+            placeholderTextColor={theme.colors.text.tertiary}
             keyboardType="email-address"
             editable={!loading}
+            onFocus={() => setFocusedField("email")}
+            onBlur={() => setFocusedField(null)}
           />
 
           <Text style={styles.label}>Şifre</Text>
           <TextInput
-            style={styles.input}
+            style={getInputStyle("password")}
             value={password}
             onChangeText={setPassword}
             placeholder="Şifreni gir"
-            placeholderTextColor="#999"
+            placeholderTextColor={theme.colors.text.tertiary}
             secureTextEntry
             autoComplete="off"
             textContentType="none"
             importantForAutofill="no"
             editable={!loading}
+            onFocus={() => setFocusedField("password")}
+            onBlur={() => setFocusedField(null)}
           />
 
           <TouchableOpacity
@@ -97,98 +108,101 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#EAF7FF",
+    backgroundColor: theme.colors.background,
   },
   content: {
-    padding: 16,
-    paddingBottom: 40,
+    padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xxl,
   },
   heroCard: {
-    backgroundColor: "#F89DAC",
-    borderRadius: 18,
-    paddingHorizontal: 16,
-    paddingVertical: 24,
-    marginBottom: 24,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.border.radius.xl,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
     alignItems: "center",
-    shadowColor: "#F89DAC",
+    shadowColor: theme.colors.primaryDark,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    elevation: 4,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#fff",
-    marginBottom: 4,
+    fontSize: theme.typography.sizes.xxxl,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.text.light,
+    marginBottom: theme.spacing.xs,
   },
   subtitle: {
-    fontSize: 16,
-    color: "#FFF4F7",
-    fontWeight: "600",
+    fontSize: theme.typography.sizes.base,
+    color: theme.colors.text.light,
+    fontWeight: theme.typography.weights.semibold,
   },
   form: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.border.radius.xl,
+    padding: theme.spacing.lg,
     borderWidth: 1,
-    borderColor: "#CFE8F7",
-    shadowColor: "#000",
+    borderColor: theme.colors.border,
+    shadowColor: theme.colors.text.primary,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
     elevation: 2,
   },
   label: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#333",
-    marginBottom: 6,
-    marginTop: 12,
+    fontSize: theme.typography.sizes.sm,
+    fontWeight: theme.typography.weights.semibold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.xs,
+    marginTop: theme.spacing.md,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#CFE8F7",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-    color: "#333",
-    backgroundColor: "#F5FBFF",
+    borderColor: theme.colors.border,
+    borderRadius: theme.border.radius.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    fontSize: theme.typography.sizes.sm,
+    color: theme.colors.text.primary,
+    backgroundColor: theme.colors.surface,
+  },
+  inputFocused: {
+    borderColor: theme.colors.primary,
   },
   button: {
-    backgroundColor: "#F89DAC",
-    borderRadius: 12,
-    paddingVertical: 14,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.border.radius.lg,
+    paddingVertical: theme.spacing.md,
     alignItems: "center",
-    marginTop: 20,
-    shadowColor: "#F89DAC",
+    marginTop: theme.spacing.xl,
+    shadowColor: theme.colors.primaryDark,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
+    shadowOpacity: 0.14,
+    shadowRadius: 6,
     elevation: 3,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
-    color: "#fff",
-    fontWeight: "800",
-    fontSize: 15,
+    color: theme.colors.text.light,
+    fontWeight: theme.typography.weights.semibold,
+    fontSize: theme.typography.sizes.sm,
   },
   footer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 16,
+    marginTop: theme.spacing.lg,
   },
   footerText: {
-    color: "#666",
-    fontSize: 14,
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.sizes.sm,
   },
   footerLink: {
-    color: "#F89DAC",
-    fontWeight: "700",
-    fontSize: 14,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.weights.semibold,
+    fontSize: theme.typography.sizes.sm,
   },
   disabled: {
     opacity: 0.5,

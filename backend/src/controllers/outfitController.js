@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { query } from "../config/db.js";
+import { pool, query } from "../config/db.js";
 import { toPublicImageUrl } from "../config/s3.js";
 
 function mapOutfitWithClothes(row) {
@@ -18,7 +18,6 @@ function mapOutfitWithClothes(row) {
       ? row.clothes.map((cloth) => ({
           ...cloth,
           image_url: toPublicImageUrl(cloth.image_url),
-          imageUri: toPublicImageUrl(cloth.image_url),
         }))
       : [],
   };
@@ -117,19 +116,44 @@ export async function toggleOutfitVisibility(req, res) {
       });
     }
 
-    const result = await query(
-      `UPDATE outfits
-       SET visibility = $2, updated_at = NOW()
-       WHERE id = $1 AND user_id = $3
-       RETURNING id, user_id, name, clothes_ids, visibility, created_at`,
-      [req.params.id, visibility, req.user.id]
-    );
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
 
-    if (!result.rows.length) {
-      return res.status(404).json({ ok: false, message: "Outfit not found" });
+      const result = await client.query(
+        `UPDATE outfits
+         SET visibility = $2, updated_at = NOW()
+         WHERE id = $1 AND user_id = $3
+         RETURNING id, user_id, name, clothes_ids, visibility, created_at`,
+        [req.params.id, visibility, req.user.id]
+      );
+
+      if (!result.rows.length) {
+        await client.query("ROLLBACK");
+        return res.status(404).json({ ok: false, message: "Outfit not found" });
+      }
+
+      // If outfit is made public, also set all included clothes to public
+      if (visibility === "public") {
+        const outfit = result.rows[0];
+        if (Array.isArray(outfit.clothes_ids) && outfit.clothes_ids.length) {
+          await client.query(
+            `UPDATE clothes
+             SET visibility = 'public', updated_at = NOW()
+             WHERE id = ANY($1::uuid[])`,
+            [outfit.clothes_ids]
+          );
+        }
+      }
+
+      await client.query("COMMIT");
+      return res.json({ ok: true, outfit: result.rows[0] });
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
     }
-
-    return res.json({ ok: true, outfit: result.rows[0] });
   } catch (error) {
     return res.status(500).json({ ok: false, message: "Failed to update outfit visibility" });
   }
@@ -372,6 +396,24 @@ export async function getOutfitById(req, res) {
     return res.json({ ok: true, outfit });
   } catch (error) {
     return res.status(500).json({ ok: false, message: "Failed to load outfit", details: error.message });
+  }
+}
+
+export async function getOutfitClothesVisibility(req, res) {
+  try {
+    const result = await query(
+      `SELECT c.id, c.visibility
+       FROM outfits o
+       LEFT JOIN LATERAL unnest(o.clothes_ids) WITH ORDINALITY AS oc(cloth_id, position) ON true
+       LEFT JOIN clothes c ON c.id = oc.cloth_id
+       WHERE o.id = $1
+       ORDER BY oc.position`,
+      [req.params.id]
+    );
+
+    return res.json({ ok: true, clothes: result.rows });
+  } catch (error) {
+    return res.status(500).json({ ok: false, message: "Failed to load clothes visibility", details: error.message });
   }
 }
 
